@@ -1,0 +1,170 @@
+{
+  "name": "Chatbot Nivel 1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue": "={{ $json.body.message?.toLowerCase() }}",
+              "rightValue": "hola|hello|buenos|buenas|hey",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "if-greeting",
+      "name": "Is Greeting",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [470, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: 'Hola! Bienvenido al soporte de Telecom. ¿En qué puedo ayudarte? Puedo ayudarte con: 1) Estado de tu ticket 2) Crear un nuevo ticket 3) Consultas frecuentes', intent: 'greeting' }) }}",
+        "options": {}
+      },
+      "id": "respond-greeting",
+      "name": "Greeting Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [690, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-2",
+              "leftValue": "={{ $json.body.message?.toLowerCase() }}",
+              "rightValue": "ticket|problema|falla|no funciona|ayuda|soporte",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "if-ticket",
+      "name": "Is Ticket Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [470, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: 'Entiendo que necesitas ayuda con un problema. Para crear un ticket, por favor ve a la sección de Tickets en el menú y haz clic en \"Nuevo Ticket\". Describe tu problema con detalle y te asignaremos un agente lo antes posible.', intent: 'create_ticket', action: 'redirect_tickets' }) }}",
+        "options": {}
+      },
+      "id": "respond-ticket",
+      "name": "Ticket Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [690, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: 'No estoy seguro de entender tu consulta. Puedo ayudarte con:\\n- Estado de tickets\\n- Crear nuevos tickets\\n- Información de servicios\\n\\n¿Podrías reformular tu pregunta?', intent: 'unknown' }) }}",
+        "options": {}
+      },
+      "id": "respond-default",
+      "name": "Default Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [690, 550]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Greeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Greeting": {
+      "main": [
+        [
+          {
+            "node": "Greeting Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Ticket Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Ticket Request": {
+      "main": [
+        [
+          {
+            "node": "Ticket Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Default Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "soporte-telecom"
+    }
+  ]
+}
