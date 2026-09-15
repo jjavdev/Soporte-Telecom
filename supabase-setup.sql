@@ -358,3 +358,141 @@ DROP TRIGGER IF EXISTS update_chat_sessions_updated_at ON chat_sessions;
 CREATE TRIGGER update_chat_sessions_updated_at
   BEFORE UPDATE ON chat_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- 10. AUTOMATIZACIONES NATIVAS (Supabase)
+-- Sustituyen los workflows n8n 01/02/03.
+-- Corren 100% en PostgreSQL, sin dependencias externas.
+-- ============================================
+
+-- ------------------------------------------------------------
+-- 10.1 AUTO-ASIGNACIÓN DE AGENTE + SLA DEADLINE (BEFORE INSERT)
+-- Al crear un ticket sin agente, asigna el agente activo con
+-- menor carga y fija el plazo SLA según la prioridad.
+-- ------------------------------------------------------------
+DROP FUNCTION IF EXISTS before_ticket_insert() CASCADE;
+
+CREATE OR REPLACE FUNCTION before_ticket_insert()
+RETURNS TRIGGER AS $$
+DECLARE
+  available_agent UUID;
+BEGIN
+  -- Fijar plazo SLA según prioridad si no viene definido
+  IF NEW.sla_deadline IS NULL THEN
+    NEW.sla_deadline := now() + CASE NEW.priority
+      WHEN 'urgent' THEN interval '1 hour'
+      WHEN 'high'   THEN interval '4 hours'
+      WHEN 'medium' THEN interval '24 hours'
+      ELSE interval '72 hours'
+    END;
+  END IF;
+
+  -- Auto-asignar agente si el ticket no tiene uno
+  IF NEW.agent_id IS NULL THEN
+    SELECT u.id INTO available_agent
+    FROM users u
+    WHERE u.role = 'agent' AND u.status = 'active'
+    ORDER BY (
+      SELECT COUNT(*) FROM tickets t
+      WHERE t.agent_id = u.id AND t.status IN ('open', 'in_progress')
+    ) ASC, u.created_at ASC
+    LIMIT 1;
+
+    IF available_agent IS NOT NULL THEN
+      NEW.agent_id := available_agent;
+      NEW.status := 'in_progress';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS before_ticket_insert_trigger ON tickets;
+CREATE TRIGGER before_ticket_insert_trigger
+  BEFORE INSERT ON tickets
+  FOR EACH ROW EXECUTE FUNCTION before_ticket_insert();
+
+-- ------------------------------------------------------------
+-- 10.2 NOTIFICACIÓN IN-APP POR CAMBIO DE ESTADO (AFTER UPDATE)
+-- Al cambiar el estado de un ticket, notifica al cliente.
+-- ------------------------------------------------------------
+DROP FUNCTION IF EXISTS notify_ticket_status() CASCADE;
+
+CREATE OR REPLACE FUNCTION notify_ticket_status()
+RETURNS TRIGGER AS $$
+DECLARE
+  status_label TEXT;
+BEGIN
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    status_label := CASE NEW.status
+      WHEN 'open'        THEN 'Abierto'
+      WHEN 'in_progress' THEN 'En progreso'
+      WHEN 'resolved'    THEN 'Resuelto'
+      WHEN 'closed'      THEN 'Cerrado'
+      ELSE NEW.status
+    END;
+
+    INSERT INTO notifications (user_id, type, title, message)
+    VALUES (
+      NEW.client_id,
+      'ticket_status',
+      'Tu ticket cambió de estado',
+      'El ticket "' || NEW.title || '" ahora está: ' || status_label || '.'
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS notify_ticket_status_trigger ON tickets;
+CREATE TRIGGER notify_ticket_status_trigger
+  AFTER UPDATE ON tickets
+  FOR EACH ROW EXECUTE FUNCTION notify_ticket_status();
+
+-- ------------------------------------------------------------
+-- 10.3 ESCALAMIENTO POR SLA (pg_cron, cada 5 minutos)
+-- Requiere habilitar la extensión pg_cron:
+--   Supabase Dashboard > Database > Extensions > pg_cron
+-- ------------------------------------------------------------
+DROP FUNCTION IF EXISTS escalate_overdue_tickets() CASCADE;
+
+CREATE OR REPLACE FUNCTION escalate_overdue_tickets()
+RETURNS void AS $$
+DECLARE
+  t RECORD;
+BEGIN
+  FOR t IN
+    SELECT id, title, agent_id
+    FROM tickets
+    WHERE status IN ('open', 'in_progress')
+      AND sla_deadline IS NOT NULL
+      AND sla_deadline < now()
+      AND priority <> 'urgent'
+  LOOP
+    UPDATE tickets SET priority = 'urgent', updated_at = now() WHERE id = t.id;
+
+    IF t.agent_id IS NOT NULL THEN
+      INSERT INTO notifications (user_id, type, title, message)
+      VALUES (
+        t.agent_id,
+        'sla_escalation',
+        'Ticket escalado por SLA',
+        'El ticket "' || t.title || '" superó su plazo SLA y fue escalado a prioridad urgente.'
+      );
+    END IF;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Programar el job (idempotente). Ejecutar DESPUÉS de habilitar pg_cron.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'pg_cron') THEN
+    IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'escalar-sla') THEN
+      PERFORM cron.unschedule('escalar-sla');
+    END IF;
+    PERFORM cron.schedule('escalar-sla', '*/5 * * * *', $$SELECT public.escalate_overdue_tickets()$$);
+  END IF;
+END $$;

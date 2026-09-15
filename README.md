@@ -22,7 +22,7 @@ Reducir la saturación del soporte de primer nivel implementando un chatbot con 
 | Formularios | React Hook Form + Zod | 7.x / 3.x |
 | Base de Datos | Supabase (PostgreSQL, Auth, Realtime, RLS) | — |
 | IA Chatbot | DeepSeek API (deepseek-flash) | — |
-| Automatización | n8n (Docker) | — |
+| Automatización | n8n (Docker, 1 workflow) + Supabase native (triggers + pg_cron) | — |
 | Despliegue | Vercel | — |
 
 ## Arquitectura
@@ -49,11 +49,10 @@ Reducir la saturación del soporte de primer nivel implementando un chatbot con 
 │   n8n (Docker)   │              │  Webhook n8n     │
 │   localhost:5678 │◄────────────│  /webhook/chatbot│
 │                   │              │                  │
-│  4 workflows:    │              │  Chatbot N1:     │
-│  · Auto-asign    │              │  · DeepSeek AI   │
-│  · Email notify  │              │  · IA real       │
-│  · SLA escal.    │              │  · Escalamiento   │
-│  · Chatbot       │              └──────────────────┘
+│  1 workflow:     │              │  Chatbot N1:     │
+│  · Chatbot       │              │  · DeepSeek AI   │
+│                  │              │  · IA real       │
+│                  │              └──────────────────┘
 └──────────────────┘
 ```
 
@@ -111,7 +110,7 @@ soporte-telecom/
 │   ├── types/
 │   │   └── database.ts             # Tipos TypeScript del schema
 │   └── middleware.ts                # Auth middleware (Next.js)
-├── n8n-workflows/                  # 4 workflows de automatización
+├── n8n-workflows/                  # 1 workflow: Chatbot DeepSeek (04-chatbot-nivel1.json)
 │   ├── 01-auto-assign-ticket.json
 │   ├── 02-notify-email-ticket.json
 │   ├── 03-escalate-sla.json
@@ -276,22 +275,34 @@ El chatbot utiliza un system prompt que define:
 - Intenciones y acciones disponibles
 - Reglas de comportamiento
 
-## Automatizaciones n8n
+## Automatizaciones
 
-| # | Workflow | Trigger | Acción |
-|---|----------|---------|--------|
-| 1 | Auto-asignación | INSERT en `tickets` | Asigna agente disponible por categoría |
-| 2 | Notificación Email | UPDATE en `tickets` | Email al cliente con cambio de estado |
-| 3 | Escalamiento SLA | Cron cada 5 min | Escala tickets que superan tiempo límite |
-| 4 | Chatbot Nivel 1 | Webhook POST `/webhook/chatbot` | DeepSeek AI clasifica y responde |
+### n8n (1 workflow activo)
 
-### Configuración de n8n
+| Workflow | Trigger | Acción |
+|----------|---------|--------|
+| Chatbot Nivel 1 | Webhook POST `/webhook/chatbot` | DeepSeek AI clasifica intención y responde |
 
+### Supabase nativo (PostgreSQL triggers + pg_cron)
+
+| Automatización | Tipo | Descripción |
+|----------------|------|-------------|
+| Auto-asignación | `BEFORE INSERT` trigger | Asigna agente activo con menor carga + fija SLA deadline |
+| Notificación in-app | `AFTER UPDATE` trigger | Notifica al cliente cuando cambia el estado del ticket |
+| Escalamiento SLA | `pg_cron` (cada 5 min) | Escala a urgente los tickets que superaron su plazo SLA |
+
+### Configuración
+
+**n8n:**
 1. Acceder a http://localhost:5678
 2. Ir a **Workflows** → **Import from File**
-3. Importar cada JSON de `n8n-workflows/`
-4. Activar cada workflow manualmente
-5. Configurar las credenciales de Supabase en n8n
+3. Importar `n8n-workflows/04-chatbot-nivel1.json`
+4. Activar el workflow
+
+**Supabase:**
+1. Ejecutar `supabase-setup.sql` en el SQL Editor
+2. Habilitar extensión `pg_cron`: Database > Extensions > pg_cron
+3. Re-ejecutar la sección 10.3 para registrar el job `escalar-sla`
 
 ## Roles de Usuario
 
