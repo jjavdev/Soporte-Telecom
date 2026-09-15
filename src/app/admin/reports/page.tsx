@@ -4,23 +4,29 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/common/Card'
 import Badge from '@/components/common/Badge'
-import { FileText, Download } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import type { Ticket } from '@/types/database'
 
 export default function AdminReportsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchTickets = async () => {
-      const { data } = await supabase
-        .from('tickets')
-        .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name), agent:users!tickets_agent_id_fkey(full_name)')
-        .order('created_at', { ascending: false })
+      try {
+        const { data } = await supabase
+          .from('tickets')
+          .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name), agent:users!tickets_agent_id_fkey(full_name)')
+          .order('created_at', { ascending: false })
 
-      setTickets((data as Ticket[]) || [])
-      setLoading(false)
+        setTickets((data as Ticket[]) || [])
+      } catch {
+        setError('Error al cargar los tickets')
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchTickets()
@@ -40,6 +46,18 @@ export default function AdminReportsPage() {
       high: tickets.filter((t) => t.priority === 'high').length,
       urgent: tickets.filter((t) => t.priority === 'urgent').length,
     },
+  }
+
+  if (loading) return <div className="py-12 text-center text-gray-mid">Cargando reportes...</div>
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-danger">{error}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
+          Reintentar
+        </button>
+      </div>
+    )
   }
 
   return (

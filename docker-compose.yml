@@ -7,8 +7,8 @@ services:
       - "5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=soporte2026
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
@@ -16,8 +16,10 @@ services:
       - GENERIC_TIMEZONE=America/Caracas
       - TZ=America/Caracas
       # Supabase credentials for workflows
-      - SUPABASE_URL=https://bqqnuiisycaplcajapwx.supabase.co
-      - SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxcW51aWlzeWNhcGxjYWphcHd4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODIxNjk0OCwiZXhwIjoyMTAzNzkyOTQ4fQ.VFdcP3cw24KN1zdbx5hnQKT6cHt7CzOTgvQkmiZT-KE
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # DeepSeek AI for chatbot
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
 

@@ -48,11 +48,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <h1 className="text-xl font-bold text-primary">Soporte Telecom</h1>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 p-3" aria-label="Navegación principal">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 pathname === item.href
@@ -95,6 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <button
             onClick={handleLogout}
+            aria-label="Cerrar sesión"
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-mid hover:bg-gray-100"
           >
             <LogOut className="h-4 w-4" />

@@ -7,15 +7,9 @@ import Card from '@/components/common/Card'
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import type { TicketStatus, TicketPriority } from '@/types/database'
-
-const statusColors: Record<TicketStatus, 'success' | 'warning' | 'info' | 'danger' | 'default'> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  closed: 'default',
-}
+import { statusColors } from '@/lib/constants'
 
 const priorityColors: Record<TicketPriority, 'danger' | 'warning' | 'info' | 'default'> = {
   urgent: 'danger',

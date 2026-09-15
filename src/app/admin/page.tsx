@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/common/Card'
-import Badge from '@/components/common/Badge'
 import {
   BarChart3,
   Ticket,
@@ -36,32 +35,37 @@ export default function AdminDashboard() {
     avgResponseTime: '0 min',
     slaCompliance: 0,
   })
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [total, open, inProgress, resolved, users, chats] = await Promise.all([
-        supabase.from('tickets').select('id', { count: 'exact', head: true }),
-        supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-        supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
-        supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'resolved'),
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      ])
+      try {
+        const [total, open, inProgress, resolved, users, chats] = await Promise.all([
+          supabase.from('tickets').select('id', { count: 'exact', head: true }),
+          supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+          supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
+          supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'resolved'),
+          supabase.from('users').select('id', { count: 'exact', head: true }),
+          supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        ])
 
-      const totalT = total.count || 0
-      const resolvedT = resolved.count || 0
+        const totalT = total.count || 0
+        const resolvedT = resolved.count || 0
 
-      setStats({
-        totalTickets: totalT,
-        openTickets: open.count || 0,
-        inProgressTickets: inProgress.count || 0,
-        resolvedTickets: resolvedT,
-        totalUsers: users.count || 0,
-        activeChats: chats.count || 0,
-        avgResponseTime: '12 min',
-        slaCompliance: totalT > 0 ? Math.round((resolvedT / totalT) * 100) : 0,
-      })
+        setStats({
+          totalTickets: totalT,
+          openTickets: open.count || 0,
+          inProgressTickets: inProgress.count || 0,
+          resolvedTickets: resolvedT,
+          totalUsers: users.count || 0,
+          activeChats: chats.count || 0,
+          avgResponseTime: '12 min',
+          slaCompliance: totalT > 0 ? Math.round((resolvedT / totalT) * 100) : 0,
+        })
+      } catch {
+        setError('Error al cargar las estadísticas')
+      }
     }
 
     fetchStats()
@@ -75,6 +79,17 @@ export default function AdminDashboard() {
     { label: 'Usuarios', value: stats.totalUsers, icon: Users, color: 'text-purple-500' },
     { label: 'Chats Activos', value: stats.activeChats, icon: MessageSquare, color: 'text-green-500' },
   ]
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-danger">{error}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
+          Reintentar
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

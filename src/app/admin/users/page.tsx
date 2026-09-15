@@ -5,30 +5,30 @@ import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/common/Card'
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/Button'
-import { Users, Shield, UserCheck, UserX } from 'lucide-react'
+import { Users, UserCheck, UserX } from 'lucide-react'
 import type { User, UserRole } from '@/types/database'
-
-const roleColors: Record<UserRole, 'info' | 'success' | 'warning' | 'danger'> = {
-  customer: 'info',
-  agent: 'success',
-  supervisor: 'warning',
-  admin: 'danger',
-}
+import { roleColors } from '@/lib/constants'
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      setUsers((data as User[]) || [])
-      setLoading(false)
+        setUsers((data as User[]) || [])
+      } catch {
+        setError('Error al cargar los usuarios')
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchUsers()
@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
       .eq('id', userId)
 
     setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: newStatus as any } : u))
+      prev.map((u) => (u.id === userId ? { ...u, status: newStatus as User['status'] } : u))
     )
   }
 
@@ -66,6 +66,13 @@ export default function AdminUsersPage() {
 
       {loading ? (
         <div className="py-12 text-center text-gray-mid">Cargando usuarios...</div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <p className="text-danger">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
+            Reintentar
+          </button>
+        </div>
       ) : (
         <Card>
           <div className="overflow-x-auto">

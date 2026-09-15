@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import Card from '@/components/common/Card'
@@ -9,44 +9,47 @@ import Badge from '@/components/common/Badge'
 import Button from '@/components/common/Button'
 import Input from '@/components/common/Input'
 import type { Ticket, Comment, TicketStatus } from '@/types/database'
-
-const statusColors: Record<TicketStatus, 'success' | 'warning' | 'info' | 'danger' | 'default'> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  closed: 'default',
-}
+import { statusColors } from '@/lib/constants'
 
 export default function TicketDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const { user } = useAuth()
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchTicket = async () => {
-      const { data } = await supabase
-        .from('tickets')
-        .select('*, category:categories(*), client:users!tickets_client_id_fkey(full_name, email), agent:users!tickets_agent_id_fkey(full_name, email)')
-        .eq('id', params.id)
-        .single()
+      try {
+        const { data } = await supabase
+          .from('tickets')
+          .select('*, category:categories(*), client:users!tickets_client_id_fkey(full_name, email), agent:users!tickets_agent_id_fkey(full_name, email)')
+          .eq('id', params.id)
+          .single()
 
-      setTicket(data as Ticket)
-      setLoading(false)
+        setTicket(data as Ticket)
+        setLoading(false)
+      } catch {
+        setError('Error al cargar el ticket')
+        setLoading(false)
+      }
     }
 
     const fetchComments = async () => {
-      const { data } = await supabase
-        .from('comments')
-        .select('*, author:users(full_name, avatar_url)')
-        .eq('ticket_id', params.id)
-        .order('created_at', { ascending: true })
+      try {
+        const { data } = await supabase
+          .from('comments')
+          .select('*, author:users(full_name, avatar_url)')
+          .eq('ticket_id', params.id)
+          .order('created_at', { ascending: true })
 
-      setComments((data as Comment[]) || [])
+        setComments((data as Comment[]) || [])
+      } catch {
+        setError('Error al cargar los comentarios')
+      }
     }
 
     fetchTicket()
@@ -85,6 +88,7 @@ export default function TicketDetailPage() {
   }
 
   if (loading) return <div className="py-12 text-center text-gray-mid">Cargando...</div>
+  if (error) return <div className="py-12 text-center text-danger">{error}</div>
   if (!ticket) return <div className="py-12 text-center text-gray-mid">Ticket no encontrado</div>
 
   return (

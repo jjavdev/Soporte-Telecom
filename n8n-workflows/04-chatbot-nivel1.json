@@ -1,5 +1,5 @@
 {
-  "name": "Chatbot Nivel 1",
+  "name": "Chatbot Nivel 1 - Soporte Telecom (DeepSeek AI)",
   "nodes": [
     {
       "parameters": {
@@ -16,146 +16,63 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
             {
-              "id": "cond-1",
-              "leftValue": "={{ $json.body.message?.toLowerCase() }}",
-              "rightValue": "hola|hello|buenos|buenas|hey",
-              "operator": {
-                "type": "string",
-                "operation": "regex"
-              }
-            }
-          ],
-          "combinator": "or"
-        },
-        "options": {}
-      },
-      "id": "if-greeting",
-      "name": "Is Greeting",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [470, 200]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ reply: 'Hola! Bienvenido al soporte de Telecom. ¿En qué puedo ayudarte? Puedo ayudarte con: 1) Estado de tu ticket 2) Crear un nuevo ticket 3) Consultas frecuentes', intent: 'greeting' }) }}",
-        "options": {}
-      },
-      "id": "respond-greeting",
-      "name": "Greeting Reply",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [690, 100]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
+              "name": "Authorization",
+              "value": "Bearer {{ $env.DEEPSEEK_API_KEY }}"
+            },
             {
-              "id": "cond-2",
-              "leftValue": "={{ $json.body.message?.toLowerCase() }}",
-              "rightValue": "ticket|problema|falla|no funciona|ayuda|soporte",
-              "operator": {
-                "type": "string",
-                "operation": "regex"
-              }
+              "name": "Content-Type",
+              "value": "application/json"
             }
-          ],
-          "combinator": "or"
+          ]
         },
-        "options": {}
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-flash\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un chatbot de soporte técnico para una empresa de telecomunicaciones llamada Soporte Telecom. Tu objetivo es ayudar a los clientes con problemas de internet, telefonía, fibra óptica y servicios corporativos.\\n\\nDebes responder ÚNICAMENTE con un JSON válido con esta estructura:\\n{\\n  \\\"reply\\\": \\\"tu respuesta al usuario\\\",\\n  \\\"intent\\\": \\\"intención detectada\\\",\\n  \\\"action\\\": \\\"acción a realizar o null\\\"\\n}\\n\\nIntenciones disponibles:\\n- greeting: el usuario saluda\\n- check_ticket_status: quiere consultar el estado de un ticket\\n- create_ticket: necesita crear un ticket de soporte\\n- faq: pregunta frecuente (reiniciar router, cambiar clave WiFi, consultar saldo, facturas, velocidad)\\n- business_hours: consulta horario de atención\\n- escalate_to_human: quiere hablar con un agente humano\\n- unknown: no se pudo determinar la intención\\n\\nAcciones disponibles:\\n- redirect_tickets: redirigir a la sección de tickets\\n- escalate: escalar a agente humano\\n- null: sin acción adicional\\n\\nReglas:\\n- Responde en español\\n- Sé amable y profesional\\n- Si el problema requiere un agente humano, usa escalate_to_human\\n- ParaFAQ de telecomunicaciones, da soluciones paso a paso\\n- NUNCA incluyas texto fuera del JSON\\n- El JSON debe ser válido y parseable\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.body.message }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 500,\n  \"stream\": false\n}"
       },
-      "id": "if-ticket",
-      "name": "Is Ticket Request",
-      "type": "n8n-nodes-base.if",
+      "id": "http-deepseek",
+      "name": "DeepSeek API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\ntry {\n  const content = response.choices[0].message.content;\n  \n  // Try to parse as JSON\n  let parsed;\n  try {\n    parsed = JSON.parse(content);\n  } catch (e) {\n    // If not valid JSON, try to extract JSON from the response\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[0]);\n    } else {\n      parsed = {\n        reply: content,\n        intent: 'unknown',\n        action: null\n      };\n    }\n  }\n  \n  return [{\n    json: {\n      reply: parsed.reply || 'Lo siento, no pude procesar tu mensaje.',\n      intent: parsed.intent || 'unknown',\n      action: parsed.action || null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      reply: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.',\n      intent: 'error',\n      action: null\n    }\n  }];\n}"
+      },
+      "id": "code-parse",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [470, 400]
+      "position": [750, 300]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ reply: 'Entiendo que necesitas ayuda con un problema. Para crear un ticket, por favor ve a la sección de Tickets en el menú y haz clic en \"Nuevo Ticket\". Describe tu problema con detalle y te asignaremos un agente lo antes posible.', intent: 'create_ticket', action: 'redirect_tickets' }) }}",
+        "responseBody": "={{ JSON.stringify({ reply: $json.reply, intent: $json.intent, action: $json.action }) }}",
         "options": {}
       },
-      "id": "respond-ticket",
-      "name": "Ticket Reply",
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [690, 350]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ reply: 'No estoy seguro de entender tu consulta. Puedo ayudarte con:\\n- Estado de tickets\\n- Crear nuevos tickets\\n- Información de servicios\\n\\n¿Podrías reformular tu pregunta?', intent: 'unknown' }) }}",
-        "options": {}
-      },
-      "id": "respond-default",
-      "name": "Default Reply",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [690, 550]
+      "position": [1000, 300]
     }
   ],
   "connections": {
     "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Is Greeting",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "DeepSeek API", "type": "main", "index": 0 }]]
     },
-    "Is Greeting": {
-      "main": [
-        [
-          {
-            "node": "Greeting Reply",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Is Ticket Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "DeepSeek API": {
+      "main": [[{ "node": "Parse Response", "type": "main", "index": 0 }]]
     },
-    "Is Ticket Request": {
-      "main": [
-        [
-          {
-            "node": "Ticket Reply",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Default Reply",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "Parse Response": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
     }
   },
   "active": false,

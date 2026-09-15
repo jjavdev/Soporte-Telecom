@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { ChatMessage, ChatSession } from '@/types/database'
 
@@ -8,25 +8,24 @@ export function useChat(sessionId: string | null) {
   const [session, setSession] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   const fetchSession = useCallback(async () => {
     if (!sessionId) return
 
-    const { data } = await supabase
+    const { data } = await supabaseRef.current
       .from('chat_sessions')
       .select('*')
       .eq('id', sessionId)
       .single()
 
     setSession(data as ChatSession)
-  }, [sessionId, supabase])
+  }, [sessionId])
 
   const fetchMessages = useCallback(async () => {
     if (!sessionId) return
 
-    setLoading(true)
-    const { data } = await supabase
+    const { data } = await supabaseRef.current
       .from('chat_messages')
       .select('*, sender:users(full_name, avatar_url)')
       .eq('session_id', sessionId)
@@ -34,7 +33,7 @@ export function useChat(sessionId: string | null) {
 
     setMessages((data as ChatMessage[]) || [])
     setLoading(false)
-  }, [sessionId, supabase])
+  }, [sessionId])
 
   useEffect(() => {
     fetchSession()
@@ -44,6 +43,7 @@ export function useChat(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return
 
+    const supabase = supabaseRef.current
     const channel = supabase
       .channel(`chat:${sessionId}`)
       .on(
@@ -71,12 +71,12 @@ export function useChat(sessionId: string | null) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [sessionId, supabase])
+  }, [sessionId])
 
   const sendMessage = async (content: string, senderId: string) => {
     if (!sessionId) return
 
-    const { error } = await supabase.from('chat_messages').insert({
+    const { error } = await supabaseRef.current.from('chat_messages').insert({
       session_id: sessionId,
       sender_id: senderId,
       content,
@@ -86,7 +86,7 @@ export function useChat(sessionId: string | null) {
   }
 
   const createSession = async (clientId: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseRef.current
       .from('chat_sessions')
       .insert({ client_id: clientId })
       .select()

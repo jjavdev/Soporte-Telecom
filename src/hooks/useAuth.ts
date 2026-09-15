@@ -1,16 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { User } from '@/types/database'
 import { useAuthStore } from '@/stores/authStore'
 
 export function useAuth() {
   const { user, loading, setUser, setLoading } = useAuthStore()
-  const [initialized, setInitialized] = useState(false)
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
+    const supabase = supabaseRef.current
+
     const getUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
 
@@ -26,7 +26,6 @@ export function useAuth() {
         setUser(null)
       }
       setLoading(false)
-      setInitialized(true)
     }
 
     getUser()
@@ -48,7 +47,7 @@ export function useAuth() {
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase, setUser, setLoading])
+  }, [setUser, setLoading])
 
-  return { user, loading, initialized }
+  return { user, loading }
 }

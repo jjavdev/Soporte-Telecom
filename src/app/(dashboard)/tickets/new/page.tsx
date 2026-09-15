@@ -49,7 +49,7 @@ export default function NewTicketPage() {
         status: 'open',
       })
       router.push('/tickets')
-    } catch (err) {
+    } catch {
       setError('Error al crear el ticket')
       setLoading(false)
     }

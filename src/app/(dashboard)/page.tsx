@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/common/Card'
 import Badge from '@/components/common/Badge'
-import { Ticket, MessageSquare, BookOpen, Users, BarChart3 } from 'lucide-react'
+import { Ticket as TicketIcon, MessageSquare, BookOpen } from 'lucide-react'
+import type { Ticket } from '@/types/database'
+import { statusColors } from '@/lib/constants'
 
 interface Stats {
   totalTickets: number
@@ -21,34 +23,43 @@ export default function DashboardPage() {
     activeChats: 0,
     knowledgeArticles: 0,
   })
-  const [recentTickets, setRecentTickets] = useState<any[]>([])
+  const [recentTickets, setRecentTickets] = useState<Ticket[]>([])
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [tickets, open, chats, articles] = await Promise.all([
-        supabase.from('tickets').select('id', { count: 'exact', head: true }),
-        supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-        supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('knowledge_articles').select('id', { count: 'exact', head: true }),
-      ])
+      try {
+        const [tickets, open, chats, articles] = await Promise.all([
+          supabase.from('tickets').select('id', { count: 'exact', head: true }),
+          supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+          supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('knowledge_articles').select('id', { count: 'exact', head: true }),
+        ])
 
-      setStats({
-        totalTickets: tickets.count || 0,
-        openTickets: open.count || 0,
-        activeChats: chats.count || 0,
-        knowledgeArticles: articles.count || 0,
-      })
+        setStats({
+          totalTickets: tickets.count || 0,
+          openTickets: open.count || 0,
+          activeChats: chats.count || 0,
+          knowledgeArticles: articles.count || 0,
+        })
+      } catch {
+        setError('Error al cargar las estadísticas')
+      }
     }
 
     const fetchRecent = async () => {
-      const { data } = await supabase
-        .from('tickets')
-        .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name)')
-        .order('created_at', { ascending: false })
-        .limit(5)
+      try {
+        const { data } = await supabase
+          .from('tickets')
+          .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(5)
 
-      setRecentTickets(data || [])
+        setRecentTickets((data as Ticket[]) || [])
+      } catch {
+        setError('Error al cargar los tickets recientes')
+      }
     }
 
     fetchStats()
@@ -56,17 +67,21 @@ export default function DashboardPage() {
   }, [supabase])
 
   const statCards = [
-    { label: 'Total Tickets', value: stats.totalTickets, icon: Ticket, color: 'text-primary' },
-    { label: 'Tickets Abiertos', value: stats.openTickets, icon: Ticket, color: 'text-warning' },
+    { label: 'Total Tickets', value: stats.totalTickets, icon: TicketIcon, color: 'text-primary' },
+    { label: 'Tickets Abiertos', value: stats.openTickets, icon: TicketIcon, color: 'text-warning' },
     { label: 'Chats Activos', value: stats.activeChats, icon: MessageSquare, color: 'text-success' },
     { label: 'Artículos KB', value: stats.knowledgeArticles, icon: BookOpen, color: 'text-primary-light' },
   ]
 
-  const statusColors: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'default'> = {
-    open: 'warning',
-    in_progress: 'info',
-    resolved: 'success',
-    closed: 'default',
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-danger">{error}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
+          Reintentar
+        </button>
+      </div>
+    )
   }
 
   return (

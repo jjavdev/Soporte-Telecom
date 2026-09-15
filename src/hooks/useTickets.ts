@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Ticket, TicketStatus, TicketPriority } from '@/types/database'
 
@@ -14,11 +14,10 @@ export function useTickets(filters?: UseTicketsFilters) {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   const fetchTickets = useCallback(async () => {
-    setLoading(true)
-    let query = supabase
+    let query = supabaseRef.current
       .from('tickets')
       .select('*, category:categories(*), client:users!tickets_client_id_fkey(full_name, email), agent:users!tickets_agent_id_fkey(full_name, email)')
       .order('created_at', { ascending: false })
@@ -35,14 +34,14 @@ export function useTickets(filters?: UseTicketsFilters) {
       setTickets(data as Ticket[])
     }
     setLoading(false)
-  }, [filters?.status, filters?.priority, filters?.search, supabase])
+  }, [filters])
 
   useEffect(() => {
     fetchTickets()
   }, [fetchTickets])
 
   const createTicket = async (ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>) => {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseRef.current
       .from('tickets')
       .insert(ticket)
       .select()
@@ -54,7 +53,7 @@ export function useTickets(filters?: UseTicketsFilters) {
   }
 
   const updateTicket = async (id: string, updates: Partial<Ticket>) => {
-    const { error } = await supabase
+    const { error } = await supabaseRef.current
       .from('tickets')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)

@@ -22,7 +22,7 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user } = useAuth()
+  useAuth()
   const router = useRouter()
   const supabase = createClient()
 
@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <h1 className="text-xl font-bold text-primary">Admin Panel</h1>
         </div>
 
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 p-3" aria-label="Navegación de administración">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -66,6 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <button
             onClick={handleLogout}
+            aria-label="Cerrar sesión"
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-mid hover:bg-gray-100"
           >
             <LogOut className="h-4 w-4" />

@@ -11,23 +11,30 @@ export default function KnowledgePage() {
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const fetchArticles = async () => {
       setLoading(true)
-      let query = supabase
-        .from('knowledge_articles')
-        .select('*, category:categories(name, slug)')
-        .order('created_at', { ascending: false })
+      setError(null)
+      try {
+        let query = supabase
+          .from('knowledge_articles')
+          .select('*, category:categories(name, slug)')
+          .order('created_at', { ascending: false })
 
-      if (search) {
-        query = query.ilike('title', `%${search}%`)
+        if (search) {
+          query = query.ilike('title', `%${search}%`)
+        }
+
+        const { data } = await query
+        setArticles((data as KnowledgeArticle[]) || [])
+      } catch {
+        setError('Error al cargar los artículos')
+      } finally {
+        setLoading(false)
       }
-
-      const { data } = await query
-      setArticles((data as KnowledgeArticle[]) || [])
-      setLoading(false)
     }
 
     fetchArticles()
@@ -45,11 +52,21 @@ export default function KnowledgePage() {
           placeholder="Buscar artículos..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          aria-label="Buscar artículos"
           className="pl-10"
         />
       </div>
 
-      {loading ? (
+      {error && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <p className="text-danger">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {!error && loading ? (
         <div className="py-12 text-center text-gray-mid">Cargando artículos...</div>
       ) : articles.length === 0 ? (
         <Card>
