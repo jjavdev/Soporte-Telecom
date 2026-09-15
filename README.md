@@ -21,7 +21,7 @@ Reducir la saturación del soporte de primer nivel implementando un chatbot con 
 | Estado global | Zustand | 5.x |
 | Formularios | React Hook Form + Zod | 7.x / 3.x |
 | Base de Datos | Supabase (PostgreSQL, Auth, Realtime, RLS) | — |
-| IA Chatbot | DeepSeek API (deepseek-flash) | — |
+| IA Chatbot | Google Gemini API (gemini-2.5-flash) | — |
 | Automatización | n8n (Docker, 1 workflow) + Supabase native (triggers + pg_cron) | — |
 | Despliegue | Vercel | — |
 
@@ -50,7 +50,7 @@ Reducir la saturación del soporte de primer nivel implementando un chatbot con 
 │   localhost:5678 │◄────────────│  /webhook/chatbot│
 │                   │              │                  │
 │  1 workflow:     │              │  Chatbot N1:     │
-│  · Chatbot       │              │  · DeepSeek AI   │
+│  · Chatbot       │              │  · Gemini AI     │
 │                  │              │  · IA real       │
 │                  │              └──────────────────┘
 └──────────────────┘
@@ -110,7 +110,7 @@ soporte-telecom/
 │   ├── types/
 │   │   └── database.ts             # Tipos TypeScript del schema
 │   └── middleware.ts                # Auth middleware (Next.js)
-├── n8n-workflows/                  # 1 workflow: Chatbot DeepSeek (04-chatbot-nivel1.json)
+├── n8n-workflows/                  # 1 workflow: Chatbot Gemini (04-chatbot-nivel1.json)
 │   ├── 01-auto-assign-ticket.json
 │   ├── 02-notify-email-ticket.json
 │   ├── 03-escalate-sla.json
@@ -132,7 +132,7 @@ soporte-telecom/
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key de Supabase | `eyJhbG...` |
 | `SUPABASE_SERVICE_KEY` | Service key (solo server-side) | `eyJhbG...` |
 | `NEXT_PUBLIC_N8N_WEBHOOK_URL` | URL del webhook de n8n | `http://localhost:5678` |
-| `DEEPSEEK_API_KEY` | API key de DeepSeek para chatbot IA | `sk-39e8...` |
+| `GEMINI_API_KEY` | API key de Google Gemini para chatbot IA | `AQ.Ab8...` |
 
 ### Docker — n8n (`.env` en raíz)
 
@@ -142,7 +142,7 @@ soporte-telecom/
 | `N8N_BASIC_AUTH_PASSWORD` | Contraseña de autenticación n8n | `tu-password` |
 | `SUPABASE_URL` | URL de Supabase para workflows | `https://xxx.supabase.co` |
 | `SUPABASE_SERVICE_KEY` | Service key para workflows | `eyJhbG...` |
-| `DEEPSEEK_API_KEY` | API key de DeepSeek para chatbot | `sk-39e8...` |
+| `GEMINI_API_KEY` | API key de Google Gemini para chatbot | `AQ.Ab8...` |
 
 > **Nota:** Nunca commitees archivos `.env` o `.env.local`. Ya están en `.gitignore`.
 
@@ -152,7 +152,7 @@ soporte-telecom/
 - Node.js 18+
 - Docker (para n8n)
 - Cuenta de Supabase (supabase.com)
-- API key de DeepSeek (platform.deepseek.com)
+- API key de Google Gemini (aistudio.google.com/apikey)
 
 ### Paso 1: Clonar el repositorio
 ```bash
@@ -169,7 +169,7 @@ npm install
 ```bash
 cp .env.example .env.local
 ```
-Editar `.env.local` con tus credenciales de Supabase y DeepSeek API key.
+Editar `.env.local` con tus credenciales de Supabase y Gemini API key.
 
 ### Paso 4: Configurar base de datos
 Ir al SQL Editor de Supabase y ejecutar el contenido de `supabase-setup.sql`.
@@ -183,7 +183,7 @@ Esto crea:
 ### Paso 5: Iniciar n8n
 ```bash
 cp .env.example .env.docker   # Crear .env para Docker
-# Editar .env con tus credenciales de Supabase y DeepSeek API key
+# Editar .env con tus credenciales de Supabase y Gemini API key
 docker compose up -d
 ```
 Acceder a http://localhost:5678 e importar los workflows de `n8n-workflows/`.
@@ -231,20 +231,20 @@ Abrir http://localhost:3000
                      └──────────────┘
 ```
 
-## Chatbot Nivel 1 (DeepSeek AI)
+## Chatbot Nivel 1 (Gemini AI)
 
-El chatbot integra inteligencia artificial real mediante **DeepSeek API** (modelo `deepseek-flash`) para clasificar intenciones y responder automáticamente. A diferencia de los chatbots basados en regex, este utiliza un modelo de lenguaje que comprende el contexto del usuario.
+El chatbot integra inteligencia artificial real mediante **Google Gemini API** (modelo `gemini-2.5-flash`) para clasificar intenciones y responder automáticamente. A diferencia de los chatbots basados en regex, este utiliza un modelo de lenguaje que comprende el contexto del usuario.
 
 ### Flujo del chatbot
 
 ```
-Usuario → Webhook n8n → HTTP Request (DeepSeek API) → Parse JSON → Respuesta
+Usuario → Webhook n8n → HTTP Request (Gemini API) → Parse JSON → Respuesta
 ```
 
 **Arquitectura:**
 - **Webhook** recibe el mensaje del usuario
-- **HTTP Request** envía el mensaje + system prompt a DeepSeek API
-- **Code Node** parsea la respuesta JSON de DeepSeek
+- **HTTP Request** envía el mensaje + system instruction a Gemini API
+- **Code Node** parsea la respuesta JSON de Gemini (elimina code fences markdown)
 - **RespondToWebhook** retorna la respuesta al frontend
 
 ### Intenciones soportadas
@@ -281,7 +281,7 @@ El chatbot utiliza un system prompt que define:
 
 | Workflow | Trigger | Acción |
 |----------|---------|--------|
-| Chatbot Nivel 1 | Webhook POST `/webhook/chatbot` | DeepSeek AI clasifica intención y responde |
+| Chatbot Nivel 1 | Webhook POST `/webhook/chatbot` | Gemini AI clasifica intención y responde |
 
 ### Supabase nativo (PostgreSQL triggers + pg_cron)
 

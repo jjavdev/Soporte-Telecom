@@ -1,5 +1,5 @@
 {
-  "name": "Chatbot Nivel 1 - Soporte Telecom (DeepSeek AI)",
+  "name": "Chatbot Nivel 1 - Soporte Telecom (Gemini AI)",
   "nodes": [
     {
       "parameters": {
@@ -17,33 +17,20 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.deepseek.com/chat/completions",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer {{ $env.DEEPSEEK_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={{ $env.GEMINI_API_KEY }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"deepseek-flash\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un chatbot de soporte técnico para una empresa de telecomunicaciones llamada Soporte Telecom. Tu objetivo es ayudar a los clientes con problemas de internet, telefonía, fibra óptica y servicios corporativos.\\n\\nDebes responder ÚNICAMENTE con un JSON válido con esta estructura:\\n{\\n  \\\"reply\\\": \\\"tu respuesta al usuario\\\",\\n  \\\"intent\\\": \\\"intención detectada\\\",\\n  \\\"action\\\": \\\"acción a realizar o null\\\"\\n}\\n\\nIntenciones disponibles:\\n- greeting: el usuario saluda\\n- check_ticket_status: quiere consultar el estado de un ticket\\n- create_ticket: necesita crear un ticket de soporte\\n- faq: pregunta frecuente (reiniciar router, cambiar clave WiFi, consultar saldo, facturas, velocidad)\\n- business_hours: consulta horario de atención\\n- escalate_to_human: quiere hablar con un agente humano\\n- unknown: no se pudo determinar la intención\\n\\nAcciones disponibles:\\n- redirect_tickets: redirigir a la sección de tickets\\n- escalate: escalar a agente humano\\n- null: sin acción adicional\\n\\nReglas:\\n- Responde en español\\n- Sé amable y profesional\\n- Si el problema requiere un agente humano, usa escalate_to_human\\n- ParaFAQ de telecomunicaciones, da soluciones paso a paso\\n- NUNCA incluyas texto fuera del JSON\\n- El JSON debe ser válido y parseable\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.body.message }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 500,\n  \"stream\": false,\n  \"thinking\": { \"type\": \"disabled\" }\n}"
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"{{ $json.body.message }}\"\n        }\n      ]\n    }\n  ],\n  \"systemInstruction\": {\n    \"parts\": [\n      {\n        \"text\": \"Eres un chatbot de soporte técnico para una empresa de telecomunicaciones llamada Soporte Telecom. Tu objetivo es ayudar a los clientes con problemas de internet, telefonía, fibra óptica y servicios corporativos.\\n\\nDebes responder ÚNICAMENTE con un JSON válido con esta estructura:\\n{\\n  \\\"reply\\\": \\\"tu respuesta al usuario\\\",\\n  \\\"intent\\\": \\\"intención detectada\\\",\\n  \\\"action\\\": \\\"acción a realizar o null\\\"\\n}\\n\\nIntenciones disponibles:\\n- greeting: el usuario saluda\\n- check_ticket_status: quiere consultar el estado de un ticket\\n- create_ticket: necesita crear un ticket de soporte\\n- faq: pregunta frecuente (reiniciar router, cambiar clave WiFi, consultar saldo, facturas, velocidad)\\n- business_hours: consulta horario de atención\\n- escalate_to_human: quiere hablar con un agente humano\\n- unknown: no se pudo determinar la intención\\n\\nAcciones disponibles:\\n- redirect_tickets: redirigir a la sección de tickets\\n- escalate: escalar a agente humano\\n- null: sin acción adicional\\n\\nReglas:\\n- Responde en español\\n- Sé amable y profesional\\n- Si el problema requiere un agente humano, usa escalate_to_human\\n- Para FAQ de telecomunicaciones, da soluciones paso a paso\\n- NUNCA incluyas texto fuera del JSON\\n- El JSON debe ser válido y parseable\"\n      }\n    ]\n  },\n      \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"maxOutputTokens\": 300,\n    \"thinkingConfig\": { \"thinkingBudget\": 0 }\n  }\n}"
       },
-      "id": "http-deepseek",
-      "name": "DeepSeek API",
+      "id": "http-gemini",
+      "name": "Gemini API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [500, 300]
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\n\ntry {\n  const content = response.choices[0].message.content;\n  \n  // Try to parse as JSON\n  let parsed;\n  try {\n    parsed = JSON.parse(content);\n  } catch (e) {\n    // If not valid JSON, try to extract JSON from the response\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[0]);\n    } else {\n      parsed = {\n        reply: content,\n        intent: 'unknown',\n        action: null\n      };\n    }\n  }\n  \n  return [{\n    json: {\n      reply: parsed.reply || 'Lo siento, no pude procesar tu mensaje.',\n      intent: parsed.intent || 'unknown',\n      action: parsed.action || null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      reply: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.',\n      intent: 'error',\n      action: null\n    }\n  }];\n}"
+        "jsCode": "const response = $input.first().json;\n\ntry {\n  let content = response.candidates[0].content.parts[0].text;\n\n  // Strip markdown code fences if present (Gemini wraps JSON in ```json...```)\n  content = content.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/i, '').trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(content);\n  } catch (e) {\n    const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[0]);\n    } else {\n      parsed = {\n        reply: content,\n        intent: 'unknown',\n        action: null\n      };\n    }\n  }\n\n  return [{\n    json: {\n      reply: parsed.reply || 'Lo siento, no pude procesar tu mensaje.',\n      intent: parsed.intent || 'unknown',\n      action: parsed.action || null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      reply: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.',\n      intent: 'error',\n      action: null\n    }\n  }];\n}"
       },
       "id": "code-parse",
       "name": "Parse Response",
@@ -66,9 +53,9 @@
   ],
   "connections": {
     "Webhook": {
-      "main": [[{ "node": "DeepSeek API", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Gemini API", "type": "main", "index": 0 }]]
     },
-    "DeepSeek API": {
+    "Gemini API": {
       "main": [[{ "node": "Parse Response", "type": "main", "index": 0 }]]
     },
     "Parse Response": {

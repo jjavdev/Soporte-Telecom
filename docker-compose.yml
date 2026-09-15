@@ -18,8 +18,8 @@ services:
       # Supabase credentials for workflows
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
-      # DeepSeek AI for chatbot
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      # Google Gemini AI for chatbot
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
 
