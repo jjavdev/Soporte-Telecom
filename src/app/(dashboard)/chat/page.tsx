@@ -43,7 +43,8 @@ export default function ChatPage() {
   }, [messages, tempMessages, user?.id])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesEndRef.current?.closest('[role="log"]')
+    if (container) container.scrollTop = container.scrollHeight
   }, [uiMessages, botTyping])
 
   const handleStartChat = async () => {
@@ -89,11 +90,22 @@ export default function ChatPage() {
         return { reply: 'No pude procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.', intent: 'error' }
       }
 
-      const data = await response.json()
+      const text = await response.text()
+      if (!text || !text.trim()) {
+        return { reply: 'El chatbot no respondió. Verifica que el workflow esté activo en n8n.', intent: 'error' }
+      }
+
+      let data: Record<string, unknown>
+      try {
+        data = JSON.parse(text)
+      } catch {
+        return { reply: 'Respuesta inválida del chatbot.', intent: 'error' }
+      }
+
       return {
-        reply: data.reply || data.message || 'No entendí tu mensaje.',
-        intent: data.intent,
-        action: data.action,
+        reply: (data.reply as string) || (data.message as string) || 'No entendí tu mensaje.',
+        intent: data.intent as string,
+        action: (data.action as string) || undefined,
       }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -196,7 +208,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-auto p-4" role="log" aria-label="Mensajes del chat" aria-live="polite">
+      <div className="flex-1 min-h-0 overflow-auto p-4" role="log" aria-label="Mensajes del chat" aria-live="polite">
         {uiMessages.length === 0 && !loading && (
           <div className="py-8 text-center text-sm text-gray-mid">
             <Bot className="mx-auto mb-2 h-8 w-8" />

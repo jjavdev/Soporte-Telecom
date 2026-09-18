@@ -92,7 +92,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center gap-3">
         <BarChart3 className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-gray-dark">Panel de Administración</h1>

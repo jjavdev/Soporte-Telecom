@@ -263,6 +263,16 @@ CREATE POLICY "knowledge_insert_auth" ON knowledge_articles FOR INSERT WITH CHEC
   EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('agent', 'admin'))
 );
 
+DROP POLICY IF EXISTS "knowledge_update_admin" ON knowledge_articles;
+CREATE POLICY "knowledge_update_admin" ON knowledge_articles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+);
+
+DROP POLICY IF EXISTS "knowledge_delete_admin" ON knowledge_articles;
+CREATE POLICY "knowledge_delete_admin" ON knowledge_articles FOR DELETE USING (
+  EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+);
+
 -- CHAT_SESSIONS
 DROP POLICY IF EXISTS "chat_sessions_client" ON chat_sessions;
 CREATE POLICY "chat_sessions_client" ON chat_sessions FOR SELECT USING (client_id = auth.uid());
@@ -334,6 +344,70 @@ SELECT * FROM (VALUES
   ('Corporativo', 'Servicios corporativos y empresas', 'building', 'corporativo')
 ) AS v(name, description, icon, slug)
 WHERE NOT EXISTS (SELECT 1 FROM categories LIMIT 1);
+
+-- ============================================
+-- 8.1 ARTÍCULOS DE BASE DE CONOCIMIENTO (seed)
+-- ============================================
+INSERT INTO knowledge_articles (title, content, category_id, slug, views)
+SELECT * FROM (VALUES
+  (
+    'Cómo reiniciar tu módem correctamente',
+    'Si tienes problemas de conectividad, reiniciar el módem es el primer paso:\n\n1. Apaga el módem presionando el botón de encendido o desconectándolo de la corriente.\n2. Espera 30 segundos para que los componentes se descarguen completamente.\n3. Conecta el módem nuevamente y enciéndelo.\n4. Espera 2-3 minutos a que todas las luces estén estables (POWER, DSL/FIBRA, INTERNET).\n5. Verifica tu conexión abriendo un navegador web.\n\nSi el problema persiste después de reiniciar, contacta a soporte.',
+    (SELECT id FROM categories WHERE slug = 'internet'),
+    'como-reiniciar-modem',
+    0
+  ),
+  (
+    'Cómo cambiar tu clave WiFi',
+    'Para cambiar la contraseña de tu red WiFi:\n\n1. Abre un navegador y escribe 192.168.1.1 o 192.168.0.1 en la barra de direcciones.\n2. Ingresa con el usuario y contraseña del router (por defecto: admin/admin o está en la etiqueta del módem).\n3. Ve a la sección Wireless o WiFi Settings.\n4. Busca el campo Password o WPA Key.\n5. Escribe tu nueva contraseña (mínimo 8 caracteres, recomendado: combinación de letras, números y símbolos).\n6. Guarda los cambios y reconecta tus dispositivos con la nueva contraseña.',
+    (SELECT id FROM categories WHERE slug = 'internet'),
+    'como-cambiar-clave-wifi',
+    0
+  ),
+  (
+    'Mi internet va lento, ¿qué puedo hacer?',
+    'Antes de reportar una falla, intenta estos pasos de diagnóstico:\n\n1. **Reinicia tu módem** (apaga, espera 30 segundos, enciende).\n2. **Verifica los cables** que estén bien conectados (ethernet y fibra óptica).\n3. **Acércate al módem** o acerca tu dispositivo al router para descartar problemas de señal.\n4. **Cierra aplicaciones** que consuman mucho ancho de banda (streaming, descargas pesadas).\n5. **Haz un speed test** en speedtest.net para medir tu velocidad real.\n6. **Prueba con otro dispositivo** para ver si el problema es del equipo o de la línea.\n\nSi después de estos pasos la velocidad sigue siendo baja, crea un ticket de soporte.',
+    (SELECT id FROM categories WHERE slug = 'internet'),
+    'internet-lento-soluciones',
+    0
+  ),
+  (
+    'Cómo consultar tu saldo y consumo',
+    'Puedes consultar tu saldo de varias formas:\n\n**Por USSD (desde tu teléfono):**\n- Marca *265# y presiona llamar para ver tu saldo actual.\n\n**Por la app móvil:**\n- Descarga la app de Soporte Telecom desde Google Play o App Store.\n- Inicia sesión con tu número de teléfono y contraseña.\n- Ve a la sección "Mi Cuenta" para ver saldo, consumo y facturas.\n\n**Por llamada al IVR:**\n- Llama al *123 desde tu teléfono.\n- Sigue las indicaciones del menú para consultar saldo.\n\n**Por WhatsApp:**\n- Envía un mensaje al +58-XXX-XXXX con la palabra SALDO.',
+    (SELECT id FROM categories WHERE slug = 'telefonia'),
+    'consultar-saldo',
+    0
+  ),
+  (
+    'No tengo línea telefónica, causas comunes',
+    'Si no tienes servicio de telefonía fija:\n\n1. **Verifica que el equipo esté conectado** correctamente a la toma de pared.\n2. **Comprueba si hay tono de línea** al levantar el auricular.\n3. **Reinicia el equipo** desconectándolo por 30 segundos.\n4. **Prueba con otro teléfono** para descartar que el equipo esté dañado.\n5. **Revisa si hay deudas pendientes** que puedan estar causando el corte del servicio.\n\nSi nenhumas de estas soluciones funciona, es probable que haya un corte en tu zona. Crea un ticket indicando tu dirección y número de teléfono.',
+    (SELECT id FROM categories WHERE slug = 'telefonia'),
+    'no-tengo-linea-telefonica',
+    0
+  ),
+  (
+    'Cómo pagar tu factura',
+    'Tienes varias opciones para pagar tu factura:\n\n**Pago en línea:**\n- Ingresa a tu cuenta en el portal web de Soporte Telecom.\n- Ve a "Mis Facturas" y selecciona la que deseas pagar.\n- Elige tu método de pago (tarjeta de crédito, débito o transferencia).\n\n**Pago en efectivo:**\n- Acude a cualquier punto de pago autorizado con tu número de cliente.\n- Presenta tu factura impresa o el número de cliente.\n\n**Transferencia bancaria:**\n- Realiza una transferencia a la cuenta bancaria indicada en tu factura.\n- Incluye tu número de cliente en la referencia.\n- Envía el comprobante por WhatsApp o email.\n\n**Débito automático:**\n- Configura el débito automático desde tu cuenta en línea para no olvidar tus pagos.',
+    (SELECT id FROM categories WHERE slug = 'corporativo'),
+    'como-pagar-factura',
+    0
+  ),
+  (
+    'Problemas comunes de fibra óptica',
+    'La fibra óptica puede presentar estos problemas:\n\n**Señal débil o intermitente:**\n- Verifica que el cable de fibra no esté doblado o aplastado (radio mínimo de curvatura: 3cm).\n- Revisa que el conector SC/APC esté limpio y bien conectado.\n- Asegúrate de que no haya polvo en el conector.\n\n**No hay señal:**\n- Verifica que el ONU/ONT esté encendido (luces PON y POWER estables).\n- Reinicia el ONU desconectándolo por 30 segundos.\n- Revisa si hay cortes en tu zona.\n\n**Velocidad baja:**\n- Conecta tu dispositivo directamente al ONU con cable ethernet.\n- Haz un speed test para verificar la velocidad real.\n- Verifica que no haya dispositivos consumiendo ancho de banda.\n\nSi el problema persiste, puede ser un corte en la fibra. Crea un ticket de soporte.',
+    (SELECT id FROM categories WHERE slug = 'fibra'),
+    'problemas-fibra-optica',
+    0
+  ),
+  (
+    'Servicios corporativos disponibles',
+    'Ofrecemos servicios especializados para empresas:\n\n**Línea dedicada:**\n- Conexión simétrica con ancho de banda garantizado.\n SLA con tiempo de respuesta garantizado.\n- Ideal para oficinas y centros de datos.\n\n**VPN corporativa:**\n- Red privada virtual para conectar sedes.\n- Cifrado de extremo a extremo.\n- Soporte técnico prioritario.\n\n**Soporte prioritario:**\n- Atención dedicada con agente asignado.\n- Tiempo de respuesta en menos de 1 hora.\n- Disponible 24/7.\n\n**Cloud y hosting:**\n- Servidores en la nube para tu empresa.\n- Almacenamiento y respaldo automático.\n- Soporte técnico incluido.\n\nPara contratar o solicitar una cotización, contacta a nuestro equipo comercial al +58-XXX-XXXX o email corporativo@soportetelecom.com.',
+    (SELECT id FROM categories WHERE slug = 'corporativo'),
+    'servicios-corporativos',
+    0
+  )
+) AS v(title, content, category_id, slug, views)
+WHERE NOT EXISTS (SELECT 1 FROM knowledge_articles LIMIT 1);
 
 -- ============================================
 -- 9. TRIGGERS DE updated_at

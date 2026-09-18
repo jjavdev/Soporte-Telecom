@@ -41,7 +41,7 @@ export default function KnowledgePage() {
   }, [search, supabase])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-dark">Base de Conocimiento</h1>
       </div>

@@ -30,7 +30,7 @@ export default function TicketsPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-dark">Tickets</h1>
         <Link href="/tickets/new">

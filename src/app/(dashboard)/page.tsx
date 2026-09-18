@@ -85,7 +85,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <h1 className="text-2xl font-bold text-gray-dark">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

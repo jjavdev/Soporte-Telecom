@@ -58,7 +58,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center gap-3">
         <Users className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-gray-dark">Gestionar Usuarios</h1>

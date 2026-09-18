@@ -61,7 +61,7 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <FileText className="h-6 w-6 text-primary" />
