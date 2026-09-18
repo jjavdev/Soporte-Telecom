@@ -572,14 +572,43 @@ BEGIN
 END $$;
 
 -- ============================================
--- 11. USUARIOS DE PRUEBA (asignar roles)
+-- 11. USUARIOS DE PRUEBA
 -- ============================================
--- Ejecutar DESPUÉS de crear las 3 cuentas desde la UI.
 -- Credenciales:
 --   Admin:    admin@soporte.com / Admin123!
 --   Agente:   agente@soporte.com / Agente123!
 --   Cliente:  cliente@soporte.com / Cliente123!
 
-UPDATE users SET role = 'admin' WHERE email = 'admin@soporte.com';
-UPDATE users SET role = 'agent' WHERE email = 'agente@soporte.com';
-UPDATE users SET role = 'customer' WHERE email = 'cliente@soporte.com';
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION create_test_user(
+  p_email TEXT,
+  p_password TEXT,
+  p_full_name TEXT,
+  p_role TEXT
+) RETURNS void AS $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  v_user_id := gen_random_uuid();
+
+  INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at, raw_user_meta_data
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    v_user_id, 'authenticated', 'authenticated',
+    p_email, crypt(p_password, gen_salt('bf')),
+    now(), now(), now(),
+    jsonb_build_object('full_name', p_full_name)
+  );
+
+  UPDATE users SET role = p_role WHERE id = v_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+SELECT create_test_user('admin@soporte.com', 'Admin123!', 'Admin Soporte', 'admin');
+SELECT create_test_user('agente@soporte.com', 'Agente123!', 'Agente Soporte', 'agent');
+SELECT create_test_user('cliente@soporte.com', 'Cliente123!', 'Cliente Prueba', 'customer');
+
+DROP FUNCTION create_test_user;
