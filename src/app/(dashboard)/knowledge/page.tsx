@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/common/Card'
 import Input from '@/components/common/Input'
@@ -78,21 +79,23 @@ export default function KnowledgePage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {articles.map((article) => (
-            <Card key={article.id} hover>
-              <div className="mb-2 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <span className="text-xs text-gray-mid">{article.category?.name}</span>
-              </div>
-              <h3 className="mb-2 font-semibold text-gray-dark">{article.title}</h3>
-              <p className="mb-3 line-clamp-3 text-sm text-gray-mid">{article.content}</p>
-              <div className="flex items-center justify-between text-xs text-gray-mid">
-                <span>{new Date(article.created_at).toLocaleDateString('es')}</span>
-                <span className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" />
-                  {article.views} vistas
-                </span>
-              </div>
-            </Card>
+            <Link key={article.id} href={`/knowledge/${article.slug}`}>
+              <Card hover>
+                <div className="mb-2 flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span className="text-xs text-gray-mid">{article.category?.name}</span>
+                </div>
+                <h3 className="mb-2 font-semibold text-gray-dark">{article.title}</h3>
+                <p className="mb-3 line-clamp-3 text-sm text-gray-mid">{article.content}</p>
+                <div className="flex items-center justify-between text-xs text-gray-mid">
+                  <span>{new Date(article.created_at).toLocaleDateString('es')}</span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    {article.views} vistas
+                  </span>
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

@@ -570,3 +570,16 @@ BEGIN
     PERFORM cron.schedule('escalar-sla', '*/5 * * * *', $BODY$SELECT public.escalate_overdue_tickets()$BODY$);
   END IF;
 END $$;
+
+-- ============================================
+-- 11. USUARIOS DE PRUEBA (asignar roles)
+-- ============================================
+-- Ejecutar DESPUÉS de crear las 3 cuentas desde la UI.
+-- Credenciales:
+--   Admin:    admin@soporte.com / Admin123!
+--   Agente:   agente@soporte.com / Agente123!
+--   Cliente:  cliente@soporte.com / Cliente123!
+
+UPDATE users SET role = 'admin' WHERE email = 'admin@soporte.com';
+UPDATE users SET role = 'agent' WHERE email = 'agente@soporte.com';
+UPDATE users SET role = 'customer' WHERE email = 'cliente@soporte.com';
