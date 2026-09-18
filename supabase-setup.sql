@@ -567,6 +567,6 @@ BEGIN
     IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'escalar-sla') THEN
       PERFORM cron.unschedule('escalar-sla');
     END IF;
-    PERFORM cron.schedule('escalar-sla', '*/5 * * * *', $$SELECT public.escalate_overdue_tickets()$$);
+    PERFORM cron.schedule('escalar-sla', '*/5 * * * *', $BODY$SELECT public.escalate_overdue_tickets()$BODY$);
   END IF;
 END $$;
