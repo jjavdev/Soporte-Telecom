@@ -2,27 +2,44 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useTickets } from '@/hooks/useTickets'
-import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'
-import Input from '@/components/common/Input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import type { Category, TicketPriority } from '@/types/database'
 
+interface TicketForm {
+  title: string
+  description: string
+  category_id: string
+  priority: TicketPriority
+}
+
 export default function NewTicketPage() {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState('')
-  const [priority, setPriority] = useState<TicketPriority>('medium')
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [serverError, setServerError] = useState('')
 
   const { user } = useAuth()
   const { createTicket } = useTickets()
   const router = useRouter()
   const supabase = createClient()
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<TicketForm>({
+    defaultValues: {
+      title: '',
+      description: '',
+      category_id: '',
+      priority: 'medium',
+    },
+  })
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -32,101 +49,119 @@ export default function NewTicketPage() {
     fetchCategories()
   }, [supabase])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: TicketForm) => {
     if (!user) return
-
-    setLoading(true)
-    setError('')
+    setServerError('')
 
     try {
       await createTicket({
-        title,
-        description,
-        category_id: categoryId || undefined,
+        title: data.title,
+        description: data.description,
+        category_id: data.category_id || undefined,
         client_id: user.id,
-        priority,
+        priority: data.priority,
         status: 'open',
       })
       router.push('/tickets')
     } catch {
-      setError('Error al crear el ticket')
-      setLoading(false)
+      setServerError('Error al crear el ticket')
     }
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-dark">Nuevo Ticket</h1>
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-danger">{error}</div>
-          )}
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {serverError && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                {serverError}
+              </div>
+            )}
 
-          <Input
-            id="title"
-            label="Título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Describe brevemente tu problema"
-            required
-          />
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Descripción</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              placeholder="Explica tu problema con detalle..."
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Categoría</label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">Seleccionar categoría</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <Label htmlFor="title">Título</Label>
+              <Input
+                id="title"
+                placeholder="Describe brevemente tu problema"
+                aria-invalid={!!errors.title}
+                {...register('title', {
+                  required: 'El título es obligatorio',
+                  minLength: { value: 5, message: 'Mínimo 5 caracteres' },
+                })}
+              />
+              {errors.title && (
+                <p className="text-xs text-red-600">{errors.title.message}</p>
+              )}
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Prioridad</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as TicketPriority)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
-                <option value="urgent">Urgente</option>
-              </select>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <textarea
+                id="description"
+                rows={4}
+                className="flex w-full min-h-[80px] rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                placeholder="Explica tu problema con detalle..."
+                aria-invalid={!!errors.description}
+                {...register('description', {
+                  required: 'La descripción es obligatoria',
+                  minLength: { value: 10, message: 'Mínimo 10 caracteres' },
+                })}
+              />
+              {errors.description && (
+                <p className="text-xs text-red-600">{errors.description.message}</p>
+              )}
             </div>
-          </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button type="submit" loading={loading}>
-              Crear Ticket
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => router.back()}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="category_id">Categoría</Label>
+                <select
+                  id="category_id"
+                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                  {...register('category_id')}
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridad</Label>
+                <select
+                  id="priority"
+                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                  {...register('priority')}
+                >
+                  <option value="low">Baja</option>
+                  <option value="medium">Media</option>
+                  <option value="high">Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+                {isSubmitting ? 'Creando...' : 'Crear Ticket'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
   )

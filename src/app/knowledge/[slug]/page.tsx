@@ -3,10 +3,42 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'
-import { BookOpen, ArrowLeft, Eye, Calendar } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Skeleton } from '@/components/ui/skeleton'
+import { BookOpen, ArrowLeft, Eye, Calendar, Tag } from 'lucide-react'
 import type { KnowledgeArticle } from '@/types/database'
+
+function ArticleSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl space-y-6 p-4">
+      <Skeleton className="h-8 w-48" />
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-7 w-3/4" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <Separator />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
 export default function KnowledgeArticlePage() {
   const { slug } = useParams<{ slug: string }>()
@@ -34,7 +66,6 @@ export default function KnowledgeArticlePage() {
 
         setArticle(data as KnowledgeArticle)
 
-        // Incrementar vistas
         await supabase
           .from('knowledge_articles')
           .update({ views: ((data as KnowledgeArticle).views || 0) + 1 })
@@ -50,67 +81,74 @@ export default function KnowledgeArticlePage() {
   }, [slug, supabase])
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-gray-mid">Cargando artículo...</p>
-      </div>
-    )
+    return <ArticleSkeleton />
   }
 
   if (error || !article) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
-        <BookOpen className="h-12 w-12 text-gray-mid" />
-        <p className="text-gray-mid">{error || 'Artículo no encontrado'}</p>
-        <Button variant="secondary" onClick={() => router.push('/knowledge')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-4">
+        <Avatar size="lg">
+          <AvatarFallback>
+            <BookOpen className="size-5" />
+          </AvatarFallback>
+        </Avatar>
+        <p className="text-center text-sm text-muted-foreground">
+          {error || 'Artículo no encontrado'}
+        </p>
+        <Button variant="outline" onClick={() => router.push('/knowledge')}>
+          <ArrowLeft className="mr-2 size-4" /> Volver
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-3xl overflow-auto h-full p-4">
+    <div className="mx-auto max-w-3xl space-y-4 overflow-auto h-full p-4">
       <Button
         variant="ghost"
+        size="sm"
         onClick={() => router.push('/knowledge')}
-        className="mb-4"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la Base de Conocimiento
+        <ArrowLeft className="mr-2 size-4" /> Volver a la Base de Conocimiento
       </Button>
 
-      <Card className="p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium text-primary">
+      <Card>
+        <CardHeader>
+          <Badge variant="secondary" className="w-fit">
+            <Tag className="mr-1 size-3" />
             {article.category?.name || 'Sin categoría'}
-          </span>
-        </div>
+          </Badge>
+          <CardTitle className="text-xl md:text-2xl">
+            {article.title}
+          </CardTitle>
+        </CardHeader>
 
-        <h1 className="mb-4 text-2xl font-bold text-gray-dark">{article.title}</h1>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="size-3" />
+              {new Date(article.created_at).toLocaleDateString('es', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye className="size-3" />
+              {article.views} vistas
+            </span>
+          </div>
 
-        <div className="mb-6 flex items-center gap-4 text-xs text-gray-mid">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(article.created_at).toLocaleDateString('es', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye className="h-3 w-3" />
-            {article.views} vistas
-          </span>
-        </div>
+          <Separator />
 
-        <div className="prose prose-sm max-w-none text-gray-dark">
-          {article.content.split('\n').map((paragraph, i) => (
-            <p key={i} className="mb-3 whitespace-pre-line leading-relaxed">
-              {paragraph}
-            </p>
-          ))}
-        </div>
+          <div className="prose prose-sm max-w-none text-foreground">
+            {article.content.split('\n').map((paragraph, i) => (
+              <p key={i} className="mb-3 whitespace-pre-line leading-relaxed text-sm">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        </CardContent>
       </Card>
     </div>
   )

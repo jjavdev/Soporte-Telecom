@@ -2,12 +2,22 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'
-import Input from '@/components/common/Input'
-import Modal from '@/components/common/Modal'
-import Badge from '@/components/common/Badge'
-import { Plus, Pencil, Trash2, BookOpen, Search } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+  DialogFooter,
+  DialogContent,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Plus, Pencil, Trash2, BookOpen, Search, Eye } from 'lucide-react'
 
 interface Article {
   id: string
@@ -27,6 +37,27 @@ interface Category {
 }
 
 const emptyForm = { title: '', content: '', slug: '', category_id: '' }
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i}>
+          <CardContent className="py-4">
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/3" />
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
 export default function AdminKnowledgePage() {
   const [articles, setArticles] = useState<Article[]>([])
@@ -149,14 +180,17 @@ export default function AdminKnowledgePage() {
   return (
     <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-dark">Base de Conocimiento</h1>
+        <div className="flex items-center gap-3">
+          <BookOpen className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Base de Conocimiento</h1>
+        </div>
         <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Artículo
+          <Plus className="mr-2 h-4 w-4" /> Nuevo
         </Button>
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-mid" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar artículos..."
           value={search}
@@ -167,144 +201,185 @@ export default function AdminKnowledgePage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
           <button onClick={() => setError(null)} className="ml-2 underline">cerrar</button>
         </div>
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-gray-mid">Cargando artículos...</div>
+        <LoadingSkeleton />
       ) : filtered.length === 0 ? (
         <Card>
-          <div className="py-8 text-center">
-            <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-mid" />
-            <p className="text-gray-mid">No se encontraron artículos</p>
-          </div>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BookOpen className="mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">No se encontraron artículos</p>
+          </CardContent>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-xs font-medium uppercase text-gray-mid">
-                <th className="pb-3 pr-4">Título</th>
-                <th className="pb-3 pr-4">Categoría</th>
-                <th className="pb-3 pr-4 text-right">Vistas</th>
-                <th className="pb-3 pr-4">Fecha</th>
-                <th className="pb-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((article) => (
-                <tr key={article.id} className="border-b border-gray-100">
-                  <td className="py-3 pr-4 font-medium text-gray-dark">{article.title}</td>
-                  <td className="py-3 pr-4">
-                    <Badge>{article.category_name}</Badge>
-                  </td>
-                  <td className="py-3 pr-4 text-right text-gray-mid">{article.views}</td>
-                  <td className="py-3 pr-4 text-gray-mid">
-                    {new Date(article.created_at).toLocaleDateString('es')}
-                  </td>
-                  <td className="py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(article)}
-                        className="rounded p-1 text-gray-mid hover:bg-gray-100 hover:text-primary"
-                        aria-label="Editar artículo"
-                      >
+        <>
+          {/* Mobile: cards */}
+          <div className="space-y-3 md:hidden">
+            {filtered.map((article) => (
+              <Card key={article.id}>
+                <CardHeader>
+                  <CardTitle className="line-clamp-1">{article.title}</CardTitle>
+                  <CardAction>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEdit(article)} aria-label="Editar">
                         <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteId(article.id)}
-                        className="rounded p-1 text-gray-mid hover:bg-red-50 hover:text-red-600"
-                        aria-label="Eliminar artículo"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setDeleteId(article.id)} aria-label="Eliminar">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                  </td>
+                  </CardAction>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{article.category_name}</Badge>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Eye className="h-3 w-3" /> {article.views}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(article.created_at).toLocaleDateString('es')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs font-medium uppercase text-muted-foreground">
+                  <th className="pb-3 pr-4">Título</th>
+                  <th className="pb-3 pr-4">Categoría</th>
+                  <th className="pb-3 pr-4 text-right">Vistas</th>
+                  <th className="pb-3 pr-4">Fecha</th>
+                  <th className="pb-3 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((article) => (
+                  <tr key={article.id} className="border-b border-border/50">
+                    <td className="py-3 pr-4 font-medium">{article.title}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant="secondary">{article.category_name}</Badge>
+                    </td>
+                    <td className="py-3 pr-4 text-right text-muted-foreground">{article.views}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">
+                      {new Date(article.created_at).toLocaleDateString('es')}
+                    </td>
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon-sm" onClick={() => openEdit(article)} aria-label="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon-sm" onClick={() => setDeleteId(article.id)} aria-label="Eliminar">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      {/* Modal crear/editar */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingId ? 'Editar Artículo' : 'Nuevo Artículo'}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-dark">Título *</label>
-            <Input
-              value={form.title}
-              onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="Título del artículo"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-dark">Categoría *</label>
-            <select
-              value={form.category_id}
-              onChange={(e) => setForm(f => ({ ...f, category_id: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              <option value="">Seleccionar categoría</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-dark">Slug (opcional)</label>
-            <Input
-              value={form.slug}
-              onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))}
-              placeholder="se-genera-del-titulo"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-dark">Contenido *</label>
-            <textarea
-              value={form.content}
-              onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
-              rows={8}
-              placeholder="Contenido del artículo (usa saltos de línea para separar párrafos)"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave} loading={saving} disabled={!form.title.trim() || !form.content.trim() || !form.category_id}>
-              {editingId ? 'Guardar Cambios' : 'Crear Artículo'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Dialog crear/editar */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar Artículo' : 'Nuevo Artículo'}</DialogTitle>
+            <DialogDescription>
+              {editingId ? 'Modifica los campos del artículo.' : 'Completa los campos para crear un nuevo artículo.'}
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Modal eliminar */}
-      <Modal
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        title="Eliminar Artículo"
-      >
-        <p className="mb-4 text-sm text-gray-mid">
-          ¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.
-        </p>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setDeleteId(null)}>
-            Cancelar
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Eliminar
-          </Button>
-        </div>
-      </Modal>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título *</Label>
+              <Input
+                id="title"
+                value={form.title}
+                onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="Título del artículo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoría *</Label>
+              <select
+                id="category"
+                value={form.category_id}
+                onChange={(e) => setForm(f => ({ ...f, category_id: e.target.value }))}
+                className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">Seleccionar categoría</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug">Slug (opcional)</Label>
+              <Input
+                id="slug"
+                value={form.slug}
+                onChange={(e) => setForm(f => ({ ...f, slug: e.target.value }))}
+                placeholder="se-genera-del-titulo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Contenido *</Label>
+              <textarea
+                id="content"
+                value={form.content}
+                onChange={(e) => setForm(f => ({ ...f, content: e.target.value }))}
+                rows={6}
+                placeholder="Contenido del artículo"
+                className="flex w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancelar
+            </DialogClose>
+            <Button
+              onClick={handleSave}
+              disabled={saving || !form.title.trim() || !form.content.trim() || !form.category_id}
+            >
+              {saving ? 'Guardando...' : editingId ? 'Guardar Cambios' : 'Crear Artículo'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog eliminar */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar Artículo</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancelar
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDelete}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

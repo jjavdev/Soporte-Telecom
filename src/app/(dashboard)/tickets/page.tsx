@@ -3,19 +3,40 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTickets } from '@/hooks/useTickets'
-import Card from '@/components/common/Card'
-import Badge from '@/components/common/Badge'
-import Button from '@/components/common/Button'
-import Input from '@/components/common/Input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Search } from 'lucide-react'
 import type { TicketStatus, TicketPriority } from '@/types/database'
-import { statusColors } from '@/lib/constants'
 
-const priorityColors: Record<TicketPriority, 'danger' | 'warning' | 'info' | 'default'> = {
-  urgent: 'danger',
-  high: 'warning',
-  medium: 'info',
-  low: 'default',
+const statusLabels: Record<TicketStatus, string> = {
+  open: 'Abierto',
+  in_progress: 'En Progreso',
+  resolved: 'Resuelto',
+  closed: 'Cerrado',
+}
+
+const statusClasses: Record<TicketStatus, string> = {
+  open: 'bg-amber-100 text-amber-800 border-amber-200',
+  in_progress: 'bg-blue-100 text-blue-800 border-blue-200',
+  resolved: 'bg-green-100 text-green-800 border-green-200',
+  closed: 'bg-gray-100 text-gray-600 border-gray-200',
+}
+
+const priorityLabels: Record<TicketPriority, string> = {
+  urgent: 'Urgente',
+  high: 'Alta',
+  medium: 'Media',
+  low: 'Baja',
+}
+
+const priorityClasses: Record<TicketPriority, string> = {
+  urgent: 'bg-red-100 text-red-800 border-red-200',
+  high: 'bg-orange-100 text-orange-800 border-orange-200',
+  medium: 'bg-blue-100 text-blue-800 border-blue-200',
+  low: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 export default function TicketsPage() {
@@ -32,7 +53,7 @@ export default function TicketsPage() {
   return (
     <div className="space-y-6 overflow-auto h-full">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-dark">Tickets</h1>
+        <h1 className="text-2xl font-bold text-foreground">Tickets</h1>
         <Link href="/tickets/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -41,23 +62,21 @@ export default function TicketsPage() {
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-mid" />
-            <Input
-              placeholder="Buscar tickets..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar tickets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
 
         <select
           value={statusFilter || ''}
-          onChange={(e) => setStatusFilter(e.target.value as TicketStatus || undefined)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          onChange={(e) => setStatusFilter((e.target.value as TicketStatus) || undefined)}
+          className="h-8 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">Todos los estados</option>
           <option value="open">Abierto</option>
@@ -68,8 +87,8 @@ export default function TicketsPage() {
 
         <select
           value={priorityFilter || ''}
-          onChange={(e) => setPriorityFilter(e.target.value as TicketPriority || undefined)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          onChange={(e) => setPriorityFilter((e.target.value as TicketPriority) || undefined)}
+          className="h-8 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">Todas las prioridades</option>
           <option value="urgent">Urgente</option>
@@ -80,39 +99,120 @@ export default function TicketsPage() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-gray-mid">Cargando tickets...</div>
-      ) : tickets.length === 0 ? (
-        <Card>
-          <p className="py-8 text-center text-gray-mid">No se encontraron tickets</p>
-        </Card>
-      ) : (
         <div className="space-y-3">
-          {tickets.map((ticket) => (
-            <Link key={ticket.id} href={`/tickets/${ticket.id}`}>
-              <Card hover>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-dark">{ticket.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-gray-mid">
-                      {ticket.description}
-                    </p>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-mid">
-                      <span>{ticket.client?.full_name}</span>
-                      <span>·</span>
-                      <span>{ticket.category?.name}</span>
-                      <span>·</span>
-                      <span>{new Date(ticket.created_at).toLocaleDateString('es')}</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant={statusColors[ticket.status]}>{ticket.status}</Badge>
-                    <Badge variant={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
-                  </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="flex items-start justify-between">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
                 </div>
-              </Card>
-            </Link>
+                <div className="flex flex-col items-end gap-2">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
+      ) : tickets.length === 0 ? (
+        <Card>
+          <CardContent>
+            <p className="py-8 text-center text-muted-foreground">No se encontraron tickets</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Mobile: cards */}
+          <div className="space-y-3 md:hidden">
+            {tickets.map((ticket) => (
+              <Link key={ticket.id} href={`/tickets/${ticket.id}`}>
+                <Card className="transition-colors hover:bg-muted/50">
+                  <CardContent className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground">{ticket.title}</h3>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                        {ticket.description}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                        <span>{ticket.client?.full_name}</span>
+                        <span>·</span>
+                        <span>{ticket.category?.name}</span>
+                        <span>·</span>
+                        <span>{new Date(ticket.created_at).toLocaleDateString('es')}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 ml-3 shrink-0">
+                      <Badge className={statusClasses[ticket.status]}>
+                        {statusLabels[ticket.status]}
+                      </Badge>
+                      <Badge className={priorityClasses[ticket.priority]}>
+                        {priorityLabels[ticket.priority]}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block">
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="px-4 py-3 font-medium">Título</th>
+                      <th className="px-4 py-3 font-medium">Cliente</th>
+                      <th className="px-4 py-3 font-medium">Categoría</th>
+                      <th className="px-4 py-3 font-medium">Estado</th>
+                      <th className="px-4 py-3 font-medium">Prioridad</th>
+                      <th className="px-4 py-3 font-medium">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tickets.map((ticket) => (
+                      <tr
+                        key={ticket.id}
+                        className="border-b last:border-b-0 transition-colors hover:bg-muted/50"
+                      >
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/tickets/${ticket.id}`}
+                            className="font-medium text-foreground hover:underline"
+                          >
+                            {ticket.title}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {ticket.client?.full_name}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {ticket.category?.name}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={statusClasses[ticket.status]}>
+                            {statusLabels[ticket.status]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={priorityClasses[ticket.priority]}>
+                            {priorityLabels[ticket.priority]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(ticket.created_at).toLocaleDateString('es')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        </>
       )}
     </div>
   )

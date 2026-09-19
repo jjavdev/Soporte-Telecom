@@ -2,10 +2,77 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Card from '@/components/common/Card'
-import Badge from '@/components/common/Badge'
-import { FileText } from 'lucide-react'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
+import { FileText, RefreshCw, AlertTriangle } from 'lucide-react'
 import type { Ticket } from '@/types/database'
+
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  open: { label: 'Abierto', variant: 'secondary' },
+  in_progress: { label: 'En Progreso', variant: 'default' },
+  resolved: { label: 'Resuelto', variant: 'outline' },
+  closed: { label: 'Cerrado', variant: 'secondary' },
+}
+
+const priorityConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  urgent: { label: 'Urgente', variant: 'destructive' },
+  high: { label: 'Alta', variant: 'secondary' },
+  medium: { label: 'Media', variant: 'default' },
+  low: { label: 'Baja', variant: 'outline' },
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-6 w-6" />
+        <Skeleton className="h-8 w-32" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="pt-6">
+              <Skeleton className="mx-auto h-10 w-16 mb-2" />
+              <Skeleton className="mx-auto h-4 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Skeleton className="h-10 w-full max-w-xs" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-5 w-8" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-5 w-8" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminReportsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -13,24 +80,41 @@ export default function AdminReportsPage() {
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const { data } = await supabase
-          .from('tickets')
-          .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name), agent:users!tickets_agent_id_fkey(full_name)')
-          .order('created_at', { ascending: false })
+  const fetchTickets = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data } = await supabase
+        .from('tickets')
+        .select('*, category:categories(name), client:users!tickets_client_id_fkey(full_name), agent:users!tickets_agent_id_fkey(full_name)')
+        .order('created_at', { ascending: false })
 
-        setTickets((data as Ticket[]) || [])
-      } catch {
-        setError('Error al cargar los tickets')
-      } finally {
-        setLoading(false)
-      }
+      setTickets((data as Ticket[]) || [])
+    } catch {
+      setError('Error al cargar los tickets')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchTickets()
   }, [supabase])
+
+  if (loading) return <LoadingSkeleton />
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <p className="text-destructive font-medium">{error}</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={fetchTickets}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
 
   const stats = {
     total: tickets.length,
@@ -48,86 +132,84 @@ export default function AdminReportsPage() {
     },
   }
 
-  if (loading) return <div className="py-12 text-center text-gray-mid">Cargando reportes...</div>
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <p className="text-danger">{error}</p>
-        <button onClick={() => window.location.reload()} className="mt-4 text-sm text-primary hover:underline">
-          Reintentar
-        </button>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6 overflow-auto h-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FileText className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-gray-dark">Reportes</h1>
-        </div>
+    <div className="space-y-6 p-4 md:p-6 overflow-auto h-full">
+      <div className="flex items-center gap-3">
+        <FileText className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Reportes</h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
-          <h2 className="mb-4 font-semibold">Tickets por Estado</h2>
-          <div className="space-y-3">
-            {Object.entries(stats.byStatus).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <Badge variant={
-                  status === 'open' ? 'warning' :
-                  status === 'in_progress' ? 'info' :
-                  status === 'resolved' ? 'success' : 'default'
-                }>
-                  {status.replace('_', ' ')}
-                </Badge>
-                <span className="font-bold">{count}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card>
-          <h2 className="mb-4 font-semibold">Tickets por Prioridad</h2>
-          <div className="space-y-3">
-            {Object.entries(stats.byPriority).map(([priority, count]) => (
-              <div key={priority} className="flex items-center justify-between">
-                <Badge variant={
-                  priority === 'urgent' ? 'danger' :
-                  priority === 'high' ? 'warning' :
-                  priority === 'medium' ? 'info' : 'default'
-                }>
-                  {priority}
-                </Badge>
-                <span className="font-bold">{count}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      <Card>
-        <h2 className="mb-4 font-semibold">Resumen General</h2>
-        <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
-          <div>
+          <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold text-primary">{stats.total}</p>
-            <p className="text-sm text-gray-mid">Total Tickets</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-warning">{stats.byStatus.open}</p>
-            <p className="text-sm text-gray-mid">Abiertos</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-success">{stats.byStatus.resolved}</p>
-            <p className="text-sm text-gray-mid">Resueltos</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-danger">{stats.byPriority.urgent}</p>
-            <p className="text-sm text-gray-mid">Urgentes</p>
-          </div>
-        </div>
-      </Card>
+            <p className="text-sm text-muted-foreground">Total Tickets</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-orange-500">{stats.byStatus.open}</p>
+            <p className="text-sm text-muted-foreground">Abiertos</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-green-600">{stats.byStatus.resolved}</p>
+            <p className="text-sm text-muted-foreground">Resueltos</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-3xl font-bold text-destructive">{stats.byPriority.urgent}</p>
+            <p className="text-sm text-muted-foreground">Urgentes</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="status">
+        <TabsList>
+          <TabsTrigger value="status">Por Estado</TabsTrigger>
+          <TabsTrigger value="priority">Por Prioridad</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="status">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tickets por Estado</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Object.entries(stats.byStatus).map(([status, count]) => {
+                const cfg = statusConfig[status]
+                return (
+                  <div key={status} className="flex items-center justify-between">
+                    <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                    <span className="font-bold text-lg">{count}</span>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="priority">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tickets por Prioridad</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Object.entries(stats.byPriority).map(([priority, count]) => {
+                const cfg = priorityConfig[priority]
+                return (
+                  <div key={priority} className="flex items-center justify-between">
+                    <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                    <span className="font-bold text-lg">{count}</span>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

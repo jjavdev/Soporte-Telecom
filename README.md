@@ -111,9 +111,6 @@ soporte-telecom/
 │   │   └── database.ts             # Tipos TypeScript del schema
 │   └── middleware.ts                # Auth middleware (Next.js)
 ├── n8n-workflows/                  # 1 workflow: Chatbot Gemini (04-chatbot-nivel1.json)
-│   ├── 01-auto-assign-ticket.json
-│   ├── 02-notify-email-ticket.json
-│   ├── 03-escalate-sla.json
 │   └── 04-chatbot-nivel1.json
 ├── supabase-setup.sql              # Schema completo + RLS + triggers
 ├── docker-compose.yml              # n8n en Docker
@@ -357,19 +354,19 @@ Verificar que el archivo `.env` existe en la raíz con las credenciales correcta
 
 ## Documentación Adicional
 
-El informe completo del proyecto está en `docs/` escrito en Typst:
-- `docs/informe.typ` — Documento principal
-- `docs/01-introduccion.typ` — Introducción
-- `docs/02-analisis.typ` — Análisis del sistema
-- `docs/03-diseno.typ` — Diseño de la solución
-- `docs/04-implementacion.typ` — Detalles de implementación
-- `docs/05-uso-ia.typ` — Uso de inteligencia artificial
-- `docs/06-pruebas.typ` — Plan de pruebas
-- `docs/07-despliegue.typ` — Estrategia de despliegue
-- `docs/08-mantenimiento.typ` — Mantenimiento
-- `docs/09-automatizaciones-n8n.typ` — Automatizaciones n8n
-- `docs/10-evidencia.typ` — Evidencia funcional
-- `docs/11-conclusiones.typ` — Conclusiones
+El informe completo del proyecto está en `../docsInformeSoporte/` escrito en Typst:
+- `informe.typ` — Documento principal
+- `01-elicitation.typ` — Proceso de Elicitación de Requisitos
+- `02-requisitos.typ` — Requisitos Funcionales y No Funcionales
+- `03-historias-usuario.typ` — Historias de Usuario
+- `04-diagramas-caso-uso.typ` — Diagramas de Caso de Uso
+- `05-uso-ia.typ` — Uso de Inteligencia Artificial
+- `06-prototipo-uiux.typ` — Prototipo UI/UX
+- `07-arquitectura-general.typ` — Arquitectura General
+- `08-arquitectura-bd.typ` — Arquitectura de Base de Datos
+- `09-automatizaciones-n8n.typ` — Automatizaciones (n8n + Supabase)
+- `10-evidencia.typ` — Evidencia funcional
+- `11-gestion-tokens.typ` — Gestión de Consumo de Tokens
 
 ## Profesora
 

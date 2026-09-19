@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useChat } from '@/hooks/useChat'
-import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'
-import { Send, MessageSquare, Bot, AlertCircle, Loader2 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Send, MessageSquare, Bot, AlertCircle, Loader2, X } from 'lucide-react'
 
 interface UiMessage {
   id: string
@@ -27,6 +30,7 @@ export default function ChatPage() {
   const [botTyping, setBotTyping] = useState(false)
   const [tempMessages, setTempMessages] = useState<UiMessage[]>([])
   const [connectionError, setConnectionError] = useState<string | null>(null)
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { session, messages, loading, sendMessage, createSession } = useChat(sessionId)
@@ -42,10 +46,20 @@ export default function ChatPage() {
     return [...dbMessages, ...uniqueTemp]
   }, [messages, tempMessages, user?.id])
 
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      const viewport = scrollViewportRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLDivElement | null
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight
+      } else if (scrollViewportRef.current) {
+        scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight
+      }
+    })
+  }, [])
+
   useEffect(() => {
-    const container = messagesEndRef.current?.closest('[role="log"]')
-    if (container) container.scrollTop = container.scrollHeight
-  }, [uiMessages, botTyping])
+    scrollToBottom()
+  }, [uiMessages, botTyping, scrollToBottom])
 
   const handleStartChat = async () => {
     if (!user) return
@@ -172,16 +186,31 @@ export default function ChatPage() {
 
   if (!sessionId) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Card className="max-w-md text-center">
-          <MessageSquare className="mx-auto mb-4 h-12 w-12 text-primary" />
-          <h2 className="mb-2 text-xl font-bold">Chat de Soporte</h2>
-          <p className="mb-6 text-sm text-gray-mid">
-            Inicia una conversación con nuestro chatbot o con un agente de soporte.
-          </p>
-          <Button onClick={handleStartChat} loading={initializing}>
-            Iniciar Chat
-          </Button>
+      <div className="flex h-full items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="flex flex-col items-center pt-6">
+            <Avatar size="lg" className="mb-4">
+              <AvatarFallback>
+                <MessageSquare className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+            <h2 className="text-xl font-bold text-foreground">Chat de Soporte</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Inicia una conversación con nuestro chatbot o con un agente de soporte.
+            </p>
+          </CardContent>
+          <div className="flex justify-center px-6 pb-6">
+            <Button onClick={handleStartChat} disabled={initializing} className="w-full">
+              {initializing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Conectando...
+                </>
+              ) : (
+                'Iniciar Chat'
+              )}
+            </Button>
+          </div>
         </Card>
       </div>
     )
@@ -189,68 +218,102 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-gray-200 bg-white p-4">
-        <h2 className="font-semibold">Chat de Soporte</h2>
-        <p className="text-xs text-gray-mid">
-          {session?.status === 'waiting'
-            ? 'Esperando agente... (el bot responde automáticamente)'
-            : 'Conectado'}
-        </p>
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b bg-background px-4 py-3">
+        <Avatar size="sm">
+          <AvatarFallback>
+            <Bot className="h-3.5 w-3.5" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-foreground">Chat de Soporte</h2>
+          <p className="text-xs text-muted-foreground">
+            {session?.status === 'waiting'
+              ? 'Esperando agente...'
+              : 'Conectado'}
+          </p>
+        </div>
+        <div className={`h-2 w-2 rounded-full ${session?.status === 'waiting' ? 'bg-yellow-500' : 'bg-green-500'}`} />
       </div>
 
+      {/* Error banner */}
       {connectionError && (
-        <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          {connectionError}
-          <button onClick={() => setConnectionError(null)} className="ml-auto text-red-500 hover:text-red-700" aria-label="Cerrar error">
-            ×
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1">{connectionError}</span>
+          <button
+            onClick={() => setConnectionError(null)}
+            className="shrink-0 text-destructive/70 hover:text-destructive"
+            aria-label="Cerrar error"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-auto p-4" role="log" aria-label="Mensajes del chat" aria-live="polite">
-        {uiMessages.length === 0 && !loading && (
-          <div className="py-8 text-center text-sm text-gray-mid">
-            <Bot className="mx-auto mb-2 h-8 w-8" />
-            Escribe un mensaje para comenzar. El bot responderá automáticamente.
-          </div>
-        )}
+      {/* Messages area */}
+      <ScrollArea ref={scrollViewportRef} className="flex-1 min-h-0" role="log" aria-label="Mensajes del chat" aria-live="polite">
+        <div className="flex flex-col gap-3 p-4">
+          {uiMessages.length === 0 && !loading && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Avatar className="mb-3">
+                <AvatarFallback>
+                  <Bot className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-sm text-muted-foreground">
+                Escribe un mensaje para comenzar.
+                <br />
+                El bot responderá automáticamente.
+              </p>
+            </div>
+          )}
 
-        <div className="space-y-4">
           {uiMessages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}
+              className={`flex items-end gap-2 ${msg.isBot ? 'justify-start' : 'justify-end'}`}
             >
+              {msg.isBot && (
+                <Avatar size="sm" className="shrink-0">
+                  <AvatarFallback>
+                    <Bot className="h-3 w-3" />
+                  </AvatarFallback>
+                </Avatar>
+              )}
+
               <div
-                className={`max-w-xs rounded-lg px-4 py-2 ${
+                className={`max-w-[80vw] sm:max-w-[70%] md:max-w-[60%] rounded-2xl px-4 py-2.5 ${
                   msg.isError
-                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    ? 'border border-destructive/20 bg-destructive/10 text-destructive'
                     : msg.isBot
-                      ? 'bg-gray-100 text-gray-dark'
-                      : 'bg-primary text-white'
+                      ? 'bg-muted text-foreground'
+                      : 'bg-primary text-primary-foreground'
                 }`}
               >
                 {msg.isBot && (
-                  <div className={`mb-1 flex items-center gap-1 text-xs font-medium ${msg.isError ? 'text-red-500' : 'text-primary'}`}>
-                    <Bot className="h-3 w-3" /> {msg.isError ? 'Sistema' : 'Bot'}
-                  </div>
+                  <p className={`mb-1 text-xs font-medium ${msg.isError ? 'text-destructive' : 'text-primary'}`}>
+                    {msg.isError ? 'Sistema' : 'Bot'}
+                  </p>
                 )}
-                <p className="text-sm whitespace-pre-line">{msg.content}</p>
-                <p className={`mt-1 text-xs ${msg.isBot ? 'text-gray-mid' : 'text-blue-100'}`}>
+                <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                <p className={`mt-1 text-[10px] ${msg.isBot ? 'text-muted-foreground' : 'text-primary-foreground/70'}`}>
                   {new Date(msg.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>
           ))}
 
+          {/* Typing indicator */}
           {botTyping && (
-            <div className="flex justify-start">
-              <div className="rounded-lg bg-gray-100 px-4 py-3">
-                <div className="mb-1 flex items-center gap-1 text-xs font-medium text-primary">
-                  <Bot className="h-3 w-3" /> Bot
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-gray-mid">
+            <div className="flex items-end gap-2 justify-start">
+              <Avatar size="sm" className="shrink-0">
+                <AvatarFallback>
+                  <Bot className="h-3 w-3" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="rounded-2xl bg-muted px-4 py-3">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Escribiendo...
                 </div>
@@ -260,20 +323,30 @@ export default function ChatPage() {
 
           <div ref={messagesEndRef} />
         </div>
-      </div>
+      </ScrollArea>
 
-      <form onSubmit={handleSend} className="border-t border-gray-200 bg-white p-4" aria-label="Enviar mensaje">
-        <div className="flex gap-2">
-          <input
+      {/* Input bar */}
+      <form onSubmit={handleSend} className="border-t bg-background p-3 sm:p-4" aria-label="Enviar mensaje">
+        <div className="flex items-center gap-2">
+          <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Escribe un mensaje..."
             aria-label="Mensaje de chat"
             disabled={sending || botTyping}
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+            className="flex-1"
           />
-          <Button type="submit" disabled={!message.trim() || sending || botTyping} loading={sending} aria-label="Enviar mensaje">
-            <Send className="h-4 w-4" />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!message.trim() || sending || botTyping}
+            aria-label="Enviar mensaje"
+          >
+            {sending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </form>

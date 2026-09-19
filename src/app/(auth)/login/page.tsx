@@ -4,9 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import Button from '@/components/common/Button'
-import Input from '@/components/common/Input'
-import Card from '@/components/common/Card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -33,49 +41,62 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-primary">Soporte Telecom</h1>
-          <p className="mt-1 text-sm text-gray-mid">Inicia sesión en tu cuenta</p>
-        </div>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-primary">
+            Soporte Telecom
+          </CardTitle>
+          <CardDescription>Inicia sesión en tu cuenta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-danger">{error}</div>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                required
+              />
+            </div>
 
-          <Input
-            id="email"
-            label="Correo electrónico"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="tu@email.com"
-            required
-          />
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-          <Input
-            id="password"
-            label="Contraseña"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-
-          <Button type="submit" loading={loading} className="w-full">
-            Iniciar Sesión
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-mid">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-primary hover:underline">
-            Regístrate
-          </Link>
-        </p>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center border-t">
+          <p className="text-sm text-muted-foreground">
+            ¿No tienes cuenta?{' '}
+            <Link
+              href="/register"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Regístrate
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   )
