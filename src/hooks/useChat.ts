@@ -62,7 +62,9 @@ export function useChat(sessionId: string | null) {
             .single()
 
           if (data) {
-            setMessages((prev) => [...prev, data as ChatMessage])
+            setMessages((prev) =>
+              prev.some((m) => m.id === (data as ChatMessage).id) ? prev : [...prev, data as ChatMessage]
+            )
           }
         }
       )
@@ -74,15 +76,26 @@ export function useChat(sessionId: string | null) {
   }, [sessionId])
 
   const sendMessage = async (content: string, senderId: string) => {
-    if (!sessionId) return
+    if (!sessionId) return null
 
-    const { error } = await supabaseRef.current.from('chat_messages').insert({
-      session_id: sessionId,
-      sender_id: senderId,
-      content,
-    })
+    const { data, error } = await supabaseRef.current
+      .from('chat_messages')
+      .insert({
+        session_id: sessionId,
+        sender_id: senderId,
+        content,
+      })
+      .select('*, sender:users(full_name, avatar_url)')
+      .single()
 
     if (error) throw error
+
+    if (data) {
+      setMessages((prev) =>
+        prev.some((m) => m.id === (data as ChatMessage).id) ? prev : [...prev, data as ChatMessage]
+      )
+    }
+    return data as ChatMessage
   }
 
   const createSession = async (clientId: string) => {
@@ -97,5 +110,5 @@ export function useChat(sessionId: string | null) {
     return data
   }
 
-  return { session, messages, loading, sendMessage, createSession }
+  return { session, messages, loading, sendMessage, createSession, refetch: fetchMessages }
 }

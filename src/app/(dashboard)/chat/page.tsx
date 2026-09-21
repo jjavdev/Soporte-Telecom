@@ -4,21 +4,14 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useChat } from '@/hooks/useChat'
+import { createClient } from '@/lib/supabase/client'
+import { mergeChatMessages, type UiMessage } from '@/lib/chat-messages'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Send, MessageSquare, Bot, AlertCircle, Loader2, X } from 'lucide-react'
-
-interface UiMessage {
-  id: string
-  content: string
-  sender_id: string
-  created_at: string
-  isBot?: boolean
-  isError?: boolean
-}
 
 export default function ChatPage() {
   const { user } = useAuth()
@@ -33,18 +26,12 @@ export default function ChatPage() {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { session, messages, loading, sendMessage, createSession } = useChat(sessionId)
+  const { session, messages, loading, sendMessage, createSession, refetch } = useChat(sessionId)
 
-  const uiMessages = useMemo(() => {
-    const dbMessages: UiMessage[] = messages.map(m => ({
-      ...m,
-      isBot: m.sender_id !== user?.id,
-      isError: false,
-    }))
-    const existingIds = new Set(dbMessages.map(m => m.id))
-    const uniqueTemp = tempMessages.filter(m => !existingIds.has(m.id))
-    return [...dbMessages, ...uniqueTemp]
-  }, [messages, tempMessages, user?.id])
+  const uiMessages = useMemo(
+    () => mergeChatMessages(messages, tempMessages, user?.id),
+    [messages, tempMessages, user?.id],
+  )
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -66,6 +53,21 @@ export default function ChatPage() {
     setInitializing(true)
     setConnectionError(null)
     try {
+      const supabase = createClient()
+      const { data: existing } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('client_id', user.id)
+        .neq('status', 'closed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existing?.id) {
+        setSessionId(existing.id)
+        return
+      }
+
       const session = await createSession(user.id)
       setSessionId(session.id)
     } catch (err: unknown) {
@@ -144,22 +146,29 @@ export default function ChatPage() {
 
     const botResult = await callChatbot(userMessage)
 
+    if (botResult) {
+      const notPersisted = ['error', 'timeout', 'connection_error', 'unavailable'].includes(botResult.intent ?? '')
+      if (notPersisted) {
+        setTempMessages(prev => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            content: botResult.reply,
+            sender_id: 'bot',
+            created_at: new Date().toISOString(),
+            isBot: true,
+            isError: true,
+          },
+        ])
+      } else {
+        await refetch()
+      }
+    }
+
     setBotTyping(false)
 
-    if (botResult) {
-      const botMsg: UiMessage = {
-        id: `bot-${Date.now()}`,
-        content: botResult.reply,
-        sender_id: 'bot',
-        created_at: new Date().toISOString(),
-        isBot: true,
-        isError: botResult.intent === 'error' || botResult.intent === 'connection_error' || botResult.intent === 'timeout',
-      }
-      setTempMessages(prev => [...prev, botMsg])
-
-      if (botResult.action === 'redirect_tickets') {
-        setTimeout(() => router.push('/tickets'), 2000)
-      }
+    if (botResult?.action === 'redirect_tickets') {
+      setTimeout(() => router.push('/tickets'), 2000)
     }
   }
 
