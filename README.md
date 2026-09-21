@@ -281,15 +281,27 @@ El chatbot usa **IA real (Google Gemini `gemini-2.5-flash`)** para clasificar in
 
 ## Roles y Seguridad
 
-| Rol | Permisos |
-|-----|----------|
-| `customer` | Crear tickets, ver su historial, chat con bot/agente, base de conocimiento |
-| `agent` | Atender tickets asignados, comentarios públicos/internos, gestionar chat |
-| `supervisor` | Rol definido en el modelo (sin vista dedicada aún) |
-| `admin` | Gestión completa: usuarios, categorías, SLA, reportes, KB |
+Cada rol tiene capacidades definidas y **aplicadas** en la UI (matriz central en `src/lib/permissions.ts`) y en la base de datos (RLS):
 
-- **Autenticación:** Supabase Auth (email/password).
-- **Autorización:** Row Level Security (RLS) por rol en todas las tablas.
+| Capacidad | customer | agent | supervisor | admin |
+|-----------|:--------:|:-----:|:----------:|:-----:|
+| Ver sus propios tickets / chats | ✅ | — | — | — |
+| Ver todos los tickets (`tickets.viewAll`) | ❌ | ✅ | ✅ | ✅ |
+| Cambiar estado del ticket (`tickets.update`) | ❌ | ✅ | ✅ | ✅ |
+| Notas internas (`comments.internal`) | ❌ | ✅ | ✅ | ✅ |
+| Gestionar chat (`chat.handle`) | ❌ | ✅ | — | ✅ |
+| Ver reportes (`reports.view`) | ❌ | ❌ | ✅ | ✅ |
+| Panel de administración (`admin.access`) | ❌ | ❌ | ❌ | ✅ |
+| Gestionar usuarios (`users.manage`) | ❌ | ❌ | ❌ | ✅ |
+| Gestionar KB (`kb.manage`) | ❌ | ❌ | ❌ | ✅ |
+
+**Aplicación:**
+- **Navegación:** el enlace "Admin Dashboard" solo aparece si `admin.access`.
+- **Rutas:** `/admin/*` está protegido por rol (redirige a `/` si no es admin).
+- **Tickets:** el cliente solo ve los suyos (RLS); agente/supervisor/admin ven todos.
+- **Comentarios:** solo staff puede crear **notas internas**, y los clientes no las ven.
+- **Estado del ticket:** solo `tickets.update` (agente/supervisor/admin).
+- **Base de datos:** Row Level Security por rol en todas las tablas.
 - **Protección de rutas:** middleware de Next.js valida la sesión y redirige a `/login`.
 
 ---
