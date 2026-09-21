@@ -14,7 +14,7 @@ import type { KnowledgeArticle } from '@/types/database'
 
 function ArticleSkeleton() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4">
+    <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
       <Skeleton className="h-8 w-48" />
       <Card>
         <CardHeader>
@@ -103,7 +103,7 @@ export default function KnowledgeArticlePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 overflow-auto h-full p-4">
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
       <Button
         variant="ghost"
         size="sm"

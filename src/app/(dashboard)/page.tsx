@@ -149,7 +149,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
 
       {/* Stats Grid */}

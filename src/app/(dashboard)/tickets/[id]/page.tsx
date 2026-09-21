@@ -36,7 +36,7 @@ const priorityVariant: Record<string, 'default' | 'secondary' | 'destructive' | 
 
 function TicketDetailSkeleton() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
       <Skeleton className="h-8 w-2/3" />
       <Skeleton className="h-4 w-1/3" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -162,7 +162,7 @@ export default function TicketDetailPage() {
   const initials = (name?: string) => name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{ticket.title}</h1>

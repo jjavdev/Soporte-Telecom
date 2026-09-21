@@ -178,7 +178,7 @@ export default function AdminKnowledgePage() {
   }
 
   return (
-    <div className="space-y-6 overflow-auto h-full">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BookOpen className="h-6 w-6 text-primary" />
@@ -301,7 +301,7 @@ export default function AdminKnowledgePage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 md:p-6">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input
@@ -317,7 +317,7 @@ export default function AdminKnowledgePage() {
                 id="category"
                 value={form.category_id}
                 onChange={(e) => setForm(f => ({ ...f, category_id: e.target.value }))}
-                className="flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm"
               >
                 <option value="">Seleccionar categoría</option>
                 {categories.map(c => (

@@ -69,7 +69,7 @@ export default function NewTicketPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 md:max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-dark">Nuevo Ticket</h1>
 
       <Card>
@@ -120,7 +120,7 @@ export default function NewTicketPage() {
                 <Label htmlFor="category_id">Categoría</Label>
                 <select
                   id="category_id"
-                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                  className="flex h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm dark:bg-input/30"
                   {...register('category_id')}
                 >
                   <option value="">Seleccionar categoría</option>
@@ -136,7 +136,7 @@ export default function NewTicketPage() {
                 <Label htmlFor="priority">Prioridad</Label>
                 <select
                   id="priority"
-                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                  className="flex h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm dark:bg-input/30"
                   {...register('priority')}
                 >
                   <option value="low">Baja</option>

@@ -22,10 +22,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/tickets', label: 'Tickets', icon: Ticket },
-  { href: '/chat', label: 'Chat', icon: MessageSquare },
-  { href: '/knowledge', label: 'Base de Conocimiento', icon: BookOpen },
+  { href: '/', label: 'Dashboard', short: 'Inicio', icon: LayoutDashboard },
+  { href: '/tickets', label: 'Tickets', short: 'Tickets', icon: Ticket },
+  { href: '/chat', label: 'Chat', short: 'Chat', icon: MessageSquare },
+  { href: '/knowledge', label: 'Base de Conocimiento', short: 'Ayuda', icon: BookOpen },
 ]
 
 const adminItems = [
@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const initials = user?.email?.slice(0, 2).toUpperCase() || '??'
 
   return (
-    <div className="flex h-screen flex-col bg-muted/30">
+    <div className="flex h-dvh flex-col bg-muted/30">
       {/* Desktop header */}
       <header className="hidden border-b bg-background md:flex md:items-center md:justify-between md:px-6 md:py-3">
         <div className="flex items-center gap-6">
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">{children}</main>
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 border-t bg-background md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -182,12 +182,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-medium transition-colors',
+                  'flex min-w-[64px] flex-col items-center justify-center gap-1 px-3 py-2 text-[10px] font-medium transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-                {item.label}
+                {item.short}
               </Link>
             )
           })}

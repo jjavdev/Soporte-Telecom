@@ -113,7 +113,7 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
@@ -139,7 +139,7 @@ export default function AdminUsersPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
@@ -161,7 +161,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6 text-primary" />
@@ -361,7 +361,7 @@ export default function AdminUsersPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Rol</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {(
                   Object.entries(roleLabels) as [UserRole, string][]
                 ).map(([value, label]) => (

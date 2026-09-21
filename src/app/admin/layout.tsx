@@ -23,10 +23,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: BarChart3 },
-  { href: '/admin/users', label: 'Usuarios', icon: Users },
-  { href: '/admin/knowledge', label: 'Base de Conocimiento', icon: BookOpen },
-  { href: '/admin/reports', label: 'Reportes', icon: FileText },
+  { href: '/admin', label: 'Dashboard', short: 'Inicio', icon: BarChart3 },
+  { href: '/admin/users', label: 'Usuarios', short: 'Usuarios', icon: Users },
+  { href: '/admin/knowledge', label: 'Base de Conocimiento', short: 'Artículos', icon: BookOpen },
+  { href: '/admin/reports', label: 'Reportes', short: 'Reportes', icon: FileText },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const initials = user?.email?.slice(0, 2).toUpperCase() || '??'
 
   return (
-    <div className="flex h-screen flex-col bg-muted/30">
+    <div className="flex h-dvh flex-col bg-muted/30">
       {/* Desktop header */}
       <header className="hidden border-b bg-background md:flex md:items-center md:justify-between md:px-6 md:py-3">
         <div className="flex items-center gap-6">
@@ -158,12 +158,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-medium transition-colors',
+                  'flex min-w-[64px] flex-col items-center justify-center gap-1 px-3 py-2 text-[10px] font-medium transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 <item.icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-                {item.label}
+                {item.short}
               </Link>
             )
           })}

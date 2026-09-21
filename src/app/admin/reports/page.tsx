@@ -26,7 +26,7 @@ const priorityConfig: Record<string, { label: string; variant: 'default' | 'seco
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-3">
         <Skeleton className="h-6 w-6" />
         <Skeleton className="h-8 w-32" />

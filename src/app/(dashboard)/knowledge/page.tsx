@@ -60,7 +60,7 @@ export default function KnowledgePage() {
   })
 
   return (
-    <div className="space-y-6 overflow-auto h-full">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Base de Conocimiento</h1>
       </div>
@@ -79,7 +79,7 @@ export default function KnowledgePage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-8 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="h-10 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm"
         >
           <option value="">Todas las categorías</option>
           {categories.map((cat) => (
