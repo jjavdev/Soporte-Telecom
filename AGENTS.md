@@ -18,3 +18,23 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
+
+## Informe del proyecto
+
+El informe vive en `../docsInformeSoporte/` (fuera del repo, junto a este proyecto) y se escribe en Typst. **Cada vez que se modifique el informe hay que regenerar PDF *y* DOCX** (el DOCX es el formato de entrega):
+
+```bash
+.venv/bin/python scripts/build-informe.py
+```
+
+Genera `../docsInformeSoporte/informe-soporte.pdf` y `informe-soporte.docx` (más copia del DOCX en `docsInformeSoporte/`). El DOCX se produce vía Typst→HTML (`--features html`)→pandoc (`pypandoc-binary`), con las imágenes data-URI decodificadas a temporales para que queden embebidas.
+
+**Nunca usar diagramas ASCII** en el informe. Los diagramas viven en `../docsInformeSoporte/diagrams/*.typ` (Typst + `@preview/fletcher`) y se compilan a PNG con `.venv/bin/python scripts/build-diagrams.py` (salida en `assets/diagrams/`). El informe los inserta con `#image(...)`. Regenerar diagramas antes de compilar si cambiaron.
+
+Screenshots de tests: `scripts/capture-test-screenshots.py` (Playwright).
+
+## Working mode
+
+- Reply in English. Use caveman full compression (terse, no filler; technical substance intact).
+- Apply ponytail for all code: stdlib/native first, shortest working diff, no unrequested abstractions.
+- Use codegraph MCP (`codegraph_explore`) before grep/read on indexed code; use context7 for library docs. Both save tokens.
