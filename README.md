@@ -69,6 +69,22 @@ Capturas reales de la aplicación:
 
 ---
 
+## Diseño Responsivo (Mobile-First)
+
+La UI se construyó **primero para móvil** y escala a tablet y escritorio:
+
+| Dispositivo | Ancho | Adaptaciones |
+|-------------|-------|--------------|
+| Móvil | `< 768px` | Header compacto + menú lateral (`Sheet`) + barra inferior con `safe-area`; 1 columna; tarjetas en vez de tablas; filtros apilados; controles 40-44px |
+| Tablet | `768–1023px` | Header de escritorio; grid 2 columnas; tablas con scroll |
+| Escritorio | `≥ 1024px` | Navegación completa; contenedor `max-w-7xl`; grids 3-6 columnas; tablas densas |
+
+| Móvil (390px) | Tablet (768px) | Escritorio (1440px) |
+|:---:|:---:|:---:|
+| ![Móvil dashboard](docsInformeSoporte/assets/responsive/movil/03-dashboard.png) | ![Tablet dashboard](docsInformeSoporte/assets/responsive/tablet/03-dashboard.png) | ![Escritorio dashboard](docsInformeSoporte/assets/responsive/escritorio/03-dashboard.png) |
+
+Para regenerar las capturas responsivas: `.venv/bin/python scripts/capture-responsive.py`.
+
 ## Funcionalidades
 
 ### Cliente (`customer`)
@@ -396,6 +412,7 @@ npm run dev        # http://localhost:3000
 | `.venv/bin/python scripts/build-informe.py` | Genera el informe **PDF + DOCX** |
 | `.venv/bin/python scripts/build-diagrams.py` | Compila los diagramas (Typst → PNG) |
 | `.venv/bin/python scripts/capture-screenshots.py` | Captura las pantallas de la app (Playwright) |
+| `.venv/bin/python scripts/capture-responsive.py` | Captura móvil/tablet/escritorio (Playwright) |
 | `.venv/bin/python scripts/capture-test-screenshots.py` | Captura la ejecución de los tests |
 
 ---
