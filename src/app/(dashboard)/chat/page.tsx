@@ -125,8 +125,8 @@ export default function ChatPage() {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return { reply: 'La respuesta está tardando demasiado. Un agente te atenderá pronto.', intent: 'timeout' }
       }
-      console.error('Chatbot error:', err)
-      return { reply: 'Error de conexión con el chatbot. Intenta de nuevo.', intent: 'connection_error' }
+      console.warn('Chatbot no disponible (n8n):', err)
+      return { reply: 'El chatbot no está disponible (n8n no responde). Un agente te atenderá pronto.', intent: 'connection_error' }
     }
   }
 

@@ -370,10 +370,12 @@ Para habilitar el escalamiento:
 ### 4. n8n (chatbot)
 
 ```bash
-cp .env.docker.example .env      # credenciales para Docker
-docker compose up -d
+bash scripts/setup-n8n.sh    # levanta n8n, importa y activa el workflow
 ```
-Acceder a http://localhost:5678 → **Workflows → Import from File** → `n8n-workflows/04-chatbot-nivel1.json` → **Activar**.
+
+O manualmente: `docker compose up -d` y luego en http://localhost:5678 → **Workflows → Import from File** → `n8n-workflows/04-chatbot-nivel1.json` → **Activar**.
+
+> Si n8n no está disponible, la app muestra un aviso y sugiere un agente; el chat no se rompe.
 
 ### 5. Servidor de desarrollo
 
@@ -426,6 +428,7 @@ npm run dev        # http://localhost:3000
 | `.venv/bin/python scripts/capture-screenshots.py` | Captura las pantallas de la app (Playwright) |
 | `.venv/bin/python scripts/capture-responsive.py` | Captura móvil/tablet/escritorio (Playwright) |
 | `.venv/bin/python scripts/seed-users.py` | Crea/actualiza los usuarios seed (auth + perfil + rol) |
+| `bash scripts/setup-n8n.sh` | Levanta n8n, importa y activa el workflow del chatbot |
 | `.venv/bin/python scripts/capture-test-screenshots.py` | Captura la ejecución de los tests |
 
 ---
