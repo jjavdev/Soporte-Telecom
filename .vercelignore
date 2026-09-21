@@ -1,0 +1,10 @@
+.codegraph
+.venv
+.next
+docs
+docsInformeSoporte
+n8n-workflows
+scripts
+tests
+*.pdf
+*.docx
