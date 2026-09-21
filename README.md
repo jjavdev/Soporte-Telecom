@@ -1,6 +1,6 @@
 # Soporte Telecom
 
-Sistema integral de **soporte al cliente para el sector de telecomunicaciones**: gestión de tickets, chat en tiempo real con **chatbot de Nivel 1 (Google Gemini)**, base de conocimiento y panel de administración con métricas y automatizaciones.
+Sistema integral de **soporte al cliente para el sector de telecomunicaciones**: gestión de tickets, chat en tiempo real con **chatbot de Nivel 1 (IA)**, base de conocimiento y panel de administración con métricas y automatizaciones.
 
 <p>
   <a href="https://soporte-telecom.vercel.app"><img alt="Demo en vivo" src="https://img.shields.io/badge/Demo-Vercel-black?logo=vercel"></a>
@@ -8,7 +8,7 @@ Sistema integral de **soporte al cliente para el sector de telecomunicaciones**:
   <img alt="React" src="https://img.shields.io/badge/React-19.2.8-61dafb?logo=react&logoColor=black">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?logo=supabase&logoColor=white">
-  <img alt="n8n" src="https://img.shields.io/badge/n8n-Docker-ea4b71?logo=n8n&logoColor=white">
+  <img alt="DeepSeek" src="https://img.shields.io/badge/IA-DeepSeek-4d6bfe">
 </p>
 
 **Demo en producción:** https://soporte-telecom.vercel.app
@@ -26,7 +26,7 @@ Sistema integral de **soporte al cliente para el sector de telecomunicaciones**:
 5. [Arquitectura](#arquitectura)
 6. [Estructura del Proyecto](#estructura-del-proyecto)
 7. [Modelo de Datos](#modelo-de-datos)
-8. [Chatbot Nivel 1 (Gemini AI)](#chatbot-nivel-1-gemini-ai)
+8. [Chatbot Nivel 1 (IA)](#chatbot-nivel-1-ia)
 9. [Automatizaciones](#automatizaciones)
 10. [Roles y Seguridad](#roles-y-seguridad)
 11. [Testing](#testing)
@@ -122,8 +122,8 @@ Para regenerar las capturas responsivas: `.venv/bin/python scripts/capture-respo
 | Base de datos | Supabase (PostgreSQL + RLS) | — |
 | Auth | Supabase Auth | — |
 | Tiempo real | Supabase Realtime | — |
-| IA Chatbot | Google Gemini API (`gemini-2.5-flash`) | — |
-| Automatización | n8n (Docker) + PostgreSQL triggers + `pg_cron` | — |
+| IA Chatbot | DeepSeek (API OpenAI-compatible, `deepseek-chat`) vía API route | — |
+| Automatización | PostgreSQL triggers + `pg_cron` (n8n opcional) | — |
 | Testing | Vitest + React Testing Library (jsdom) | 5.x |
 | Despliegue | Vercel | — |
 
@@ -131,7 +131,7 @@ Para regenerar las capturas responsivas: `.venv/bin/python scripts/capture-respo
 
 ## Arquitectura
 
-Arquitectura en capas: SPA/SSR en Next.js, Supabase como backend (Auth, Postgres, Realtime), y n8n como motor de automatización e integración con IA.
+Arquitectura en capas: SPA/SSR en Next.js, Supabase como backend (Auth, Postgres, Realtime) y el chatbot IA integrado en un **API route** server-side.
 
 ![Arquitectura en capas](docs/assets/diagrams/arquitectura-capas.png)
 
@@ -140,7 +140,7 @@ Arquitectura en capas: SPA/SSR en Next.js, Supabase como backend (Auth, Postgres
 ![Flujo de datos](docs/assets/diagrams/flujo-datos.png)
 
 - **Capa de presentación** — Next.js (App Router) + Tailwind. Server Components para datos, Client Components para interactividad.
-- **Capa de servicios** — Supabase (Auth, PostgreSQL, Realtime, Edge Functions) y n8n (webhooks + workflows).
+- **Capa de servicios** — Supabase (Auth, PostgreSQL, Realtime, Edge Functions) y el chatbot IA (`/api/chatbot`).
 - **Capa de datos** — PostgreSQL gestionado por Supabase, con RLS por rol.
 - **Despliegue** — Vercel (frontend) + GitHub (repositorio y CI/CD).
 
@@ -180,7 +180,7 @@ soporte-telecom/
 │   ├── hooks/{useAuth,useTickets,useChat}.test.ts
 │   └── components/ui.test.tsx
 ├── n8n-workflows/
-│   └── 04-chatbot-nivel1.json       # Workflow del chatbot (Gemini)
+│   └── 04-chatbot-nivel1.json       # Workflow del chatbot (alternativa a /api/chatbot)
 ├── scripts/                         # Utilidades (Python)
 │   ├── build-informe.py             # Informe → PDF + DOCX
 │   ├── build-diagrams.py            # Diagramas Typst → PNG
@@ -227,13 +227,15 @@ soporte-telecom/
 
 ---
 
-## Chatbot Nivel 1 (Gemini AI)
+## Chatbot Nivel 1 (IA)
 
-El chatbot usa **IA real (Google Gemini `gemini-2.5-flash`)** para clasificar intenciones y generar respuestas contextuales, en lugar de reglas/regex. Se ejecuta mediante un workflow de n8n.
+El chatbot usa **IA real (DeepSeek, `deepseek-chat`)** para clasificar intenciones y generar respuestas contextuales, en lugar de reglas/regex. Se ejecuta **dentro de la app** en el API route `src/app/api/chatbot/route.ts` (server-side), por lo que funciona igual en local y en producción.
 
 ![Flujo del chatbot](docs/assets/diagrams/chatbot-flujo.png)
 
-**Flujo:** `Frontend → Webhook n8n → HTTP Request (Gemini API) → Code (Parse JSON) → RespondToWebhook → Frontend`
+**Flujo:** `Frontend → POST /api/chatbot → DeepSeek (chat completions) → Parse JSON → { reply, intent, action }`
+
+> n8n es **opcional**: el workflow `n8n-workflows/04-chatbot-nivel1.json` se conserva como alternativa, pero la aplicación ya no depende de él.
 
 ### Intenciones soportadas
 
@@ -261,11 +263,11 @@ El chatbot usa **IA real (Google Gemini `gemini-2.5-flash`)** para clasificar in
 
 ## Automatizaciones
 
-### n8n (1 workflow)
+### n8n (opcional, 1 workflow)
 
 | Workflow | Trigger | Acción |
 |----------|---------|--------|
-| Chatbot Nivel 1 | Webhook `POST /webhook/chatbot` | Gemini clasifica la intención y responde |
+| Chatbot Nivel 1 | Webhook `POST /webhook/chatbot` | Clasifica la intención y responde (alternativa al API route) |
 
 ### Supabase nativo (PostgreSQL)
 
@@ -334,9 +336,9 @@ La suite cubre requisitos funcionales clave (RF-001, RF-002, RF-005, RF-012) y n
 ### Requisitos previos
 
 - **Node.js 18+** y npm
-- **Docker** (para n8n)
 - Cuenta de **Supabase** (supabase.com)
-- API key de **Google Gemini** (aistudio.google.com/apikey)
+- API key de un proveedor **OpenAI-compatible** para el chatbot (por defecto **DeepSeek**: platform.deepseek.com)
+- *(Opcional)* **Docker** si vas a usar n8n
 
 ### 1. Clonar e instalar
 
@@ -352,7 +354,7 @@ npm install
 
 ```bash
 cp .env.example .env.local
-# Editar .env.local con tus credenciales de Supabase y Gemini
+# Editar .env.local con tus credenciales de Supabase y la API key del chatbot
 ```
 
 ### 3. Base de datos
@@ -367,7 +369,9 @@ Para habilitar el escalamiento:
 1. Supabase → **Database → Extensions → `pg_cron`**.
 2. Re-ejecutar la sección **10.3** de `supabase-setup.sql` para registrar el job `escalar-sla`.
 
-### 4. n8n (chatbot)
+### 4. n8n (opcional)
+
+El chatbot ya funciona sin n8n (API route + DeepSeek). Solo si quieres usar el workflow:
 
 ```bash
 bash scripts/setup-n8n.sh    # levanta n8n, importa y activa el workflow
@@ -393,13 +397,14 @@ npm run dev        # http://localhost:3000
 |----------|-------------|:---------:|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase | Sí |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (pública) de Supabase | Sí |
-| `NEXT_PUBLIC_N8N_WEBHOOK_URL` | URL del webhook de n8n (chatbot) | No* |
-| `SUPABASE_SERVICE_KEY` | Service key (usada por n8n, no por la app) | No |
-| `GEMINI_API_KEY` | API key de Gemini (usada por n8n) | No |
+| `CHATBOT_API_KEY` | API key del proveedor de IA (DeepSeek) — **server-side** | Sí |
+| `CHATBOT_MODEL` | Modelo a usar (por defecto `deepseek-chat`) | No |
+| `CHATBOT_API_URL` | Endpoint OpenAI-compatible (por defecto DeepSeek) | No |
+| `NEXT_PUBLIC_N8N_WEBHOOK_URL` | URL del webhook de n8n (solo si usas n8n) | No |
 
-\* Si no se define, el chat muestra un mensaje amigable ("chatbot no disponible").
+> El chatbot no expone la API key al cliente: la llamada al modelo se hace en el API route `/api/chatbot`.
 
-### Docker / n8n (`\.env`)
+### Docker / n8n (`\.env`) — opcional
 
 | Variable | Descripción |
 |----------|-------------|
@@ -407,7 +412,7 @@ npm run dev        # http://localhost:3000
 | `N8N_BASIC_AUTH_PASSWORD` | Contraseña de acceso a n8n |
 | `SUPABASE_URL` | URL de Supabase para workflows |
 | `SUPABASE_SERVICE_KEY` | Service key para workflows |
-| `GEMINI_API_KEY` | API key de Gemini para el chatbot |
+| `GEMINI_API_KEY` | API key de Gemini (solo si usas el workflow original) |
 
 > **Nunca subas `.env` ni `.env.local`** al repositorio (ya están en `.gitignore`).
 
@@ -459,10 +464,9 @@ Conectar el repositorio en vercel.com para despliegue automático en cada push a
 ## Troubleshooting
 
 **El chatbot no responde**
-- Verificar que n8n esté corriendo: `docker compose ps`.
-- Revisar `NEXT_PUBLIC_N8N_WEBHOOK_URL` en `.env.local`.
-- Importar y **activar** `n8n-workflows/04-chatbot-nivel1.json`.
-- En producción, n8n es local → el chatbot no es alcanzable (ver Limitaciones).
+- Verifica `CHATBOT_API_KEY` (y `CHATBOT_MODEL`) en `.env.local` / Vercel.
+- Prueba el endpoint: `curl -X POST <url>/api/chatbot -H 'Content-Type: application/json' -d '{"message":"Hola"}'` (con sesión/auth).
+- Si usas el flujo n8n: `docker compose ps` y activar el workflow.
 
 **Error de autenticación**
 - Confirmar que `supabase-setup.sql` se ejecutó (trigger `on_auth_user_created`).
@@ -490,7 +494,7 @@ Verificar que el archivo `.env` existe en la raíz con las credenciales.
 
 ## Limitaciones conocidas
 
-- **Chatbot en producción:** n8n corre en Docker local; el bot solo funciona en desarrollo o con un endpoint n8n público (`NEXT_PUBLIC_N8N_WEBHOOK_URL`). La app degrada con un mensaje amigable.
+- **Dependencia del proveedor de IA:** el chatbot usa DeepSeek vía API; si la API falla o no hay `CHATBOT_API_KEY`, el chat degrada con un aviso amigable.
 - **Exportación de reportes:** los reportes muestran métricas en pantalla; la exportación a PDF/CSV está planificada, no implementada.
 - **Rol `supervisor`:** definido en el modelo, sin vista dedicada.
 - **MFA:** los requisitos RNF-005 (MFA para agentes/admin) y RNF-006 (backups) no están implementados en esta versión.

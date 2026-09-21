@@ -78,16 +78,11 @@ export default function ChatPage() {
   }
 
   const callChatbot = async (userMessage: string): Promise<{ reply: string; intent?: string; action?: string } | null> => {
-    const n8nUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
-    if (!n8nUrl) {
-      return { reply: 'El chatbot no está disponible en este momento. Un agente te atenderá pronto.', intent: 'unavailable' }
-    }
-
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 10000)
+      const timeout = setTimeout(() => controller.abort(), 15000)
 
-      const response = await fetch(`${n8nUrl}/webhook/chatbot`, {
+      const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,33 +95,17 @@ export default function ChatPage() {
 
       clearTimeout(timeout)
 
-      if (!response.ok) {
-        return { reply: 'No pude procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.', intent: 'error' }
+      const data = await response.json().catch(() => null)
+      if (data?.reply) {
+        return { reply: data.reply as string, intent: data.intent as string, action: data.action as string }
       }
-
-      const text = await response.text()
-      if (!text || !text.trim()) {
-        return { reply: 'El chatbot no respondió. Verifica que el workflow esté activo en n8n.', intent: 'error' }
-      }
-
-      let data: Record<string, unknown>
-      try {
-        data = JSON.parse(text)
-      } catch {
-        return { reply: 'Respuesta inválida del chatbot.', intent: 'error' }
-      }
-
-      return {
-        reply: (data.reply as string) || (data.message as string) || 'No entendí tu mensaje.',
-        intent: data.intent as string,
-        action: (data.action as string) || undefined,
-      }
+      return { reply: 'No pude procesar tu mensaje. Por favor, intenta de nuevo o contacta a un agente.', intent: 'error' }
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return { reply: 'La respuesta está tardando demasiado. Un agente te atenderá pronto.', intent: 'timeout' }
       }
-      console.warn('Chatbot no disponible (n8n):', err)
-      return { reply: 'El chatbot no está disponible (n8n no responde). Un agente te atenderá pronto.', intent: 'connection_error' }
+      console.warn('Chatbot no disponible:', err)
+      return { reply: 'El chatbot no está disponible en este momento. Un agente te atenderá pronto.', intent: 'connection_error' }
     }
   }
 
