@@ -23,14 +23,14 @@ echo "==> Importando workflow"
 docker cp "$WORKFLOW" "${CONTAINER}:/tmp/workflow.json"
 docker exec "$CONTAINER" n8n import:workflow --input=/tmp/workflow.json
 
-ID=$(docker exec "$CONTAINER" n8n list:workflow | awk -F'|' '/Chatbot Nivel 1/{print $1}' | tr -d ' ')
+ID=$(python3 -c "import json,sys;print(json.load(open('$WORKFLOW'))['id'])" 2>/dev/null || true)
 if [ -z "${ID}" ]; then
-  echo "No se pudo obtener el ID del workflow"; exit 1
+  echo "No se pudo obtener el ID del workflow (revisa el campo 'id' del JSON)"; exit 1
 fi
 
-echo "==> Activando workflow ${ID}"
-docker exec "$CONTAINER" n8n update:workflow --id="${ID}" --active=true || \
-  docker exec "$CONTAINER" n8n update:workflow --id="${ID}" --active true
+echo "==> Publicando/activando workflow ${ID}"
+docker exec "$CONTAINER" n8n publish:workflow --id="${ID}" || \
+  docker exec "$CONTAINER" n8n update:workflow --id="${ID}" --active=true || true
 
 docker restart "$CONTAINER" >/dev/null
 echo "==> Listo. Webhook: ${URL}/webhook/chatbot"

@@ -120,5 +120,9 @@
     {
       "name": "soporte-telecom"
     }
-  ]
+  ],
+  "id": "soporte-chatbot-nivel1",
+  "meta": {
+    "instanceId": "soporte-telecom-local"
+  }
 }
