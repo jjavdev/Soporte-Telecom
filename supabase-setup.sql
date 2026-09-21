@@ -574,6 +574,10 @@ END $$;
 -- ============================================
 -- 11. USUARIOS DE PRUEBA (asignar roles)
 -- ============================================
+-- IMPORTANTE: este bloque solo asigna roles; NO crea las cuentas en auth.users
+-- (PostgreSQL no puede insertar en el esquema auth de Supabase de forma segura).
+-- Para crear/registrar las cuentas seed (auth + perfil), ejecutar:
+--     .venv/bin/python scripts/seed-users.py
 -- Credenciales:
 --   Admin:    admin@soporte.com / Admin123!
 --   Agente:   agente@soporte.com / Agente123!

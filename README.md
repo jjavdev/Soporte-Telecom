@@ -217,7 +217,7 @@ soporte-telecom/
 
 **Tipos ENUM:** `user_role`, `user_status`, `ticket_priority`, `ticket_status`, `comment_type`.
 
-**Usuarios seed** (creados con `supabase-setup.sql`):
+**Usuarios seed** (crear con `.venv/bin/python scripts/seed-users.py` — registra la cuenta en Auth y su perfil):
 
 | Rol | Email | Password |
 |-----|-------|----------|
@@ -413,6 +413,7 @@ npm run dev        # http://localhost:3000
 | `.venv/bin/python scripts/build-diagrams.py` | Compila los diagramas (Typst → PNG) |
 | `.venv/bin/python scripts/capture-screenshots.py` | Captura las pantallas de la app (Playwright) |
 | `.venv/bin/python scripts/capture-responsive.py` | Captura móvil/tablet/escritorio (Playwright) |
+| `.venv/bin/python scripts/seed-users.py` | Crea/actualiza los usuarios seed (auth + perfil + rol) |
 | `.venv/bin/python scripts/capture-test-screenshots.py` | Captura la ejecución de los tests |
 
 ---
