@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Ticket, Comment, TicketStatus } from '@/types/database'
+import { can } from '@/lib/permissions'
 
 const statusVariant: Record<TicketStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   open: 'outline',
@@ -82,10 +83,13 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
+  const [commentType, setCommentType] = useState<'public' | 'internal'>('public')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+  const canInternal = can(user?.role, 'comments.internal')
+  const canUpdate = can(user?.role, 'tickets.update')
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -131,11 +135,12 @@ export default function TicketDetailPage() {
       ticket_id: params.id as string,
       author_id: user.id,
       content: newComment,
-      type: 'public',
+      type: commentType,
     })
 
     if (!error) {
       setNewComment('')
+      setCommentType('public')
       const { data } = await supabase
         .from('comments')
         .select('*, author:users(full_name, avatar_url)')
@@ -160,6 +165,7 @@ export default function TicketDetailPage() {
   if (!ticket) return <div className="py-12 text-center text-muted-foreground">Ticket no encontrado</div>
 
   const initials = (name?: string) => name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() ?? '?'
+  const visibleComments = canInternal ? comments : comments.filter((c) => c.type === 'public')
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
@@ -193,10 +199,10 @@ export default function TicketDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="max-h-80 space-y-4 overflow-auto">
-                {comments.length === 0 ? (
+                {visibleComments.length === 0 ? (
                   <p className="py-4 text-center text-sm text-muted-foreground">No hay comentarios</p>
                 ) : (
-                  comments.map((comment) => (
+                  visibleComments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
                       <Avatar size="sm">
                         <AvatarImage src={comment.author?.avatar_url ?? undefined} />
@@ -205,6 +211,9 @@ export default function TicketDetailPage() {
                       <div className="flex-1 space-y-1 rounded-lg bg-muted p-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{comment.author?.full_name}</span>
+                          {comment.type === 'internal' && (
+                            <Badge variant="outline" className="text-[10px]">Interno</Badge>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {new Date(comment.created_at).toLocaleString('es')}
                           </span>
@@ -218,16 +227,38 @@ export default function TicketDetailPage() {
 
               <Separator />
 
-              <form onSubmit={handleAddComment} className="flex gap-2">
-                <Input
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Escribe un comentario..."
-                  className="flex-1"
-                />
-                <Button type="submit" size="sm" disabled={submitting || !newComment.trim()}>
-                  {submitting ? 'Enviando...' : 'Enviar'}
-                </Button>
+              <form onSubmit={handleAddComment} className="space-y-2">
+                {canInternal && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={commentType === 'public' ? 'default' : 'outline'}
+                      onClick={() => setCommentType('public')}
+                    >
+                      Público
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={commentType === 'internal' ? 'default' : 'outline'}
+                      onClick={() => setCommentType('internal')}
+                    >
+                      Nota interna
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder={commentType === 'internal' ? 'Nota interna (no visible al cliente)...' : 'Escribe un comentario...'}
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="sm" disabled={submitting || !newComment.trim()}>
+                    {submitting ? 'Enviando...' : 'Enviar'}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -242,7 +273,7 @@ export default function TicketDetailPage() {
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center gap-3">
                   <Avatar size="sm">
-                    <AvatarImage src={(ticket.client as any)?.avatar_url ?? undefined} />
+                    <AvatarImage src={ticket.client?.avatar_url ?? undefined} />
                     <AvatarFallback>{initials(ticket.client?.full_name)}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -263,7 +294,7 @@ export default function TicketDetailPage() {
             </CardContent>
           </Card>
 
-          {(user?.role === 'admin' || user?.role === 'agent') && (
+          {canUpdate && (
             <Card>
               <CardHeader>
                 <CardTitle>Cambiar Estado</CardTitle>

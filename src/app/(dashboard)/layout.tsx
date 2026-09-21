@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { can } from '@/lib/permissions'
 
 const navItems = [
   { href: '/', label: 'Dashboard', short: 'Inicio', icon: LayoutDashboard },
@@ -70,7 +71,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {item.label}
               </Link>
             ))}
-            {adminItems.map((item) => (
+            {can(user?.role, 'admin.access') &&
+              adminItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -140,23 +142,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {item.label}
                     </Link>
                   ))}
-                  <Separator className="my-2" />
-                  {adminItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
-                        pathname.startsWith('/admin')
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.label}
-                    </Link>
-                  ))}
+                  {can(user?.role, 'admin.access') && (
+                    <>
+                      <Separator className="my-2" />
+                      {adminItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                            pathname.startsWith('/admin')
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          )}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          {item.label}
+                        </Link>
+                      ))}
+                    </>
+                  )}
                 </nav>
                 <Separator />
                 <Button variant="ghost" className="justify-start" onClick={handleLogout}>

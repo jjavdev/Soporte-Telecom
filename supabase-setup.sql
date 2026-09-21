@@ -222,7 +222,6 @@ CREATE POLICY "tickets_client_insert" ON tickets FOR INSERT WITH CHECK (client_i
 DROP POLICY IF EXISTS "tickets_agent_select" ON tickets;
 CREATE POLICY "tickets_agent_select" ON tickets FOR SELECT USING (
   agent_id = auth.uid() OR
-  status = 'open' OR
   EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('agent', 'supervisor', 'admin'))
 );
 

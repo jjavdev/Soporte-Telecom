@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTickets } from '@/hooks/useTickets'
+import { useAuth } from '@/hooks/useAuth'
+import { isStaff } from '@/lib/permissions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -40,6 +42,7 @@ const priorityClasses: Record<TicketPriority, string> = {
 }
 
 export default function TicketsPage() {
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>()
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | undefined>()
@@ -53,7 +56,7 @@ export default function TicketsPage() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Tickets</h1>
+        <h1 className="text-2xl font-bold text-foreground">{isStaff(user?.role) ? 'Tickets' : 'Mis Tickets'}</h1>
         <Link href="/tickets/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />

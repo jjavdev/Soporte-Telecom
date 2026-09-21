@@ -16,7 +16,7 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -31,10 +31,14 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
   const supabase = createClient()
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!loading && user && user.role !== 'admin') router.replace('/')
+  }, [loading, user, router])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -42,6 +46,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const initials = user?.email?.slice(0, 2).toUpperCase() || '??'
+
+  if (loading || !user || user.role !== 'admin') {
+    return (
+      <div className="flex h-dvh items-center justify-center text-sm text-muted-foreground">
+        Verificando acceso…
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-dvh flex-col bg-muted/30">

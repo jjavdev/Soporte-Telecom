@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/useAuth'
+import { isStaff } from '@/lib/permissions'
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -88,6 +90,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
+  const { user } = useAuth()
+  const staff = isStaff(user?.role)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -128,9 +132,9 @@ export default function DashboardPage() {
   }, [supabase])
 
   const statCards = [
-    { label: 'Total Tickets', value: stats.totalTickets, icon: TicketIcon, iconBg: 'bg-primary/10 text-primary' },
-    { label: 'Tickets Abiertos', value: stats.openTickets, icon: TicketIcon, iconBg: 'bg-amber-100 text-amber-600' },
-    { label: 'Chats Activos', value: stats.activeChats, icon: MessageSquare, iconBg: 'bg-green-100 text-green-600' },
+    { label: staff ? 'Total Tickets' : 'Mis Tickets', value: stats.totalTickets, icon: TicketIcon, iconBg: 'bg-primary/10 text-primary' },
+    { label: staff ? 'Tickets Abiertos' : 'Abiertos', value: stats.openTickets, icon: TicketIcon, iconBg: 'bg-amber-100 text-amber-600' },
+    { label: staff ? 'Chats Activos' : 'Mis Chats', value: stats.activeChats, icon: MessageSquare, iconBg: 'bg-green-100 text-green-600' },
     { label: 'Artículos KB', value: stats.knowledgeArticles, icon: BookOpen, iconBg: 'bg-blue-100 text-blue-600' },
   ]
 
@@ -150,7 +154,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
-      <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{staff ? 'Dashboard' : 'Mi Panel'}</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
