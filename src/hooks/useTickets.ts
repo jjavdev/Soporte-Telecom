@@ -16,15 +16,17 @@ export function useTickets(filters?: UseTicketsFilters) {
   const [error, setError] = useState<string | null>(null)
   const supabaseRef = useRef(createClient())
 
+  const { status, priority, search } = filters ?? {}
+
   const fetchTickets = useCallback(async () => {
     let query = supabaseRef.current
       .from('tickets')
       .select('*, category:categories(*), client:users!tickets_client_id_fkey(full_name, email), agent:users!tickets_agent_id_fkey(full_name, email)')
       .order('created_at', { ascending: false })
 
-    if (filters?.status) query = query.eq('status', filters.status)
-    if (filters?.priority) query = query.eq('priority', filters.priority)
-    if (filters?.search) query = query.ilike('title', `%${filters.search}%`)
+    if (status) query = query.eq('status', status)
+    if (priority) query = query.eq('priority', priority)
+    if (search) query = query.ilike('title', `%${search}%`)
 
     const { data, error } = await query
 
@@ -34,7 +36,7 @@ export function useTickets(filters?: UseTicketsFilters) {
       setTickets(data as Ticket[])
     }
     setLoading(false)
-  }, [filters])
+  }, [status, priority, search])
 
   useEffect(() => {
     fetchTickets()
