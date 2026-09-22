@@ -10,12 +10,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { ticketStatusClass, ticketStatusLabel } from '@/lib/constants'
 import {
   Ticket as TicketIcon,
   MessageSquare,
   BookOpen,
   ArrowRight,
   AlertCircle,
+  Plus,
 } from 'lucide-react'
 import type { Ticket, TicketStatus } from '@/types/database'
 
@@ -26,27 +28,10 @@ interface Stats {
   knowledgeArticles: number
 }
 
-const statusStyles: Record<TicketStatus, string> = {
-  open: 'border-amber-300 bg-amber-50 text-amber-700',
-  in_progress: 'border-blue-300 bg-blue-50 text-blue-700',
-  resolved: 'border-green-300 bg-green-50 text-green-700',
-  closed: '',
-}
-
-const statusLabels: Record<TicketStatus, string> = {
-  open: 'Abierto',
-  in_progress: 'En Progreso',
-  resolved: 'Resuelto',
-  closed: 'Cerrado',
-}
-
 function StatusBadge({ status }: { status: TicketStatus }) {
   return (
-    <Badge
-      variant={status === 'closed' ? 'secondary' : 'outline'}
-      className={cn('shrink-0', statusStyles[status])}
-    >
-      {statusLabels[status]}
+    <Badge variant="outline" className={cn('shrink-0', ticketStatusClass[status])}>
+      {ticketStatusLabel[status]}
     </Badge>
   )
 }
@@ -132,10 +117,10 @@ export default function DashboardPage() {
   }, [supabase])
 
   const statCards = [
-    { label: staff ? 'Total Tickets' : 'Mis Tickets', value: stats.totalTickets, icon: TicketIcon, iconBg: 'bg-primary/10 text-primary' },
-    { label: staff ? 'Tickets Abiertos' : 'Abiertos', value: stats.openTickets, icon: TicketIcon, iconBg: 'bg-amber-100 text-amber-600' },
-    { label: staff ? 'Chats Activos' : 'Mis Chats', value: stats.activeChats, icon: MessageSquare, iconBg: 'bg-green-100 text-green-600' },
-    { label: 'Artículos KB', value: stats.knowledgeArticles, icon: BookOpen, iconBg: 'bg-blue-100 text-blue-600' },
+    { label: staff ? 'Total Tickets' : 'Mis Tickets', value: stats.totalTickets, icon: TicketIcon, iconBg: 'bg-neutral-3 text-neutral-11', href: '/tickets' },
+    { label: staff ? 'Tickets Abiertos' : 'Abiertos', value: stats.openTickets, icon: TicketIcon, iconBg: 'bg-warning-3 text-warning-11', href: '/tickets?status=open' },
+    { label: staff ? 'Chats Activos' : 'Mis Chats', value: stats.activeChats, icon: MessageSquare, iconBg: 'bg-success-3 text-success-11', href: '/chat' },
+    { label: 'Artículos KB', value: stats.knowledgeArticles, icon: BookOpen, iconBg: 'bg-brand-3 text-brand-11', href: '/knowledge' },
   ]
 
   if (error) {
@@ -154,26 +139,34 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
-      <h1 className="text-2xl font-bold tracking-tight">{staff ? 'Dashboard' : 'Mi Panel'}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">{staff ? 'Dashboard' : 'Mi Panel'}</h1>
+        <Button nativeButton={false} render={<Link href="/tickets/new" />}>
+          <Plus className="h-4 w-4" />
+          Nuevo Ticket
+        </Button>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : statCards.map((stat) => (
-              <Card key={stat.label}>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <div className={cn('rounded-lg p-3', stat.iconBg)}>
-                      <stat.icon className="h-6 w-6" />
+              <Link key={stat.label} href={stat.href} className="rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+                <Card className="h-full transition-colors hover:bg-neutral-2">
+                  <CardContent>
+                    <div className="flex items-center gap-4">
+                      <div className={cn('rounded-lg p-3', stat.iconBg)}>
+                        <stat.icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{stat.label}</p>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
       </div>
 
@@ -197,7 +190,13 @@ export default function DashboardPage() {
               {Array.from({ length: 3 }).map((_, i) => <TicketRowSkeleton key={i} />)}
             </div>
           ) : recentTickets.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No hay tickets aún</p>
+            <div className="flex flex-col items-center gap-3 py-8">
+              <p className="text-sm text-muted-foreground">No hay tickets aún</p>
+              <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/tickets/new" />}>
+                <Plus className="h-4 w-4" />
+                Crear el primero
+              </Button>
+            </div>
           ) : (
             <>
               {/* Mobile: card layout */}

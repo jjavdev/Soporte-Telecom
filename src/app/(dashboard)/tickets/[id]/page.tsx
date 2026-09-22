@@ -13,27 +13,13 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Ticket, Comment, TicketStatus } from '@/types/database'
 import { can } from '@/lib/permissions'
-
-const statusVariant: Record<TicketStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  open: 'outline',
-  in_progress: 'default',
-  resolved: 'secondary',
-  closed: 'destructive',
-}
-
-const statusLabel: Record<TicketStatus, string> = {
-  open: 'Abierto',
-  in_progress: 'En progreso',
-  resolved: 'Resuelto',
-  closed: 'Cerrado',
-}
-
-const priorityVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  low: 'secondary',
-  medium: 'default',
-  high: 'destructive',
-  urgent: 'destructive',
-}
+import {
+  ticketPriorityClass,
+  ticketPriorityLabel,
+  ticketStatusClass,
+  ticketStatusLabel,
+  ticketStatusOrder,
+} from '@/lib/constants'
 
 function TicketDetailSkeleton() {
   return (
@@ -177,8 +163,12 @@ export default function TicketDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={statusVariant[ticket.status]}>{statusLabel[ticket.status]}</Badge>
-          <Badge variant={priorityVariant[ticket.priority] ?? 'outline'}>{ticket.priority}</Badge>
+          <Badge variant="outline" className={ticketStatusClass[ticket.status]}>
+            {ticketStatusLabel[ticket.status]}
+          </Badge>
+          <Badge variant="outline" className={ticketPriorityClass[ticket.priority]}>
+            {ticketPriorityLabel[ticket.priority]}
+          </Badge>
         </div>
       </div>
 
@@ -300,15 +290,17 @@ export default function TicketDetailPage() {
                 <CardTitle>Cambiar Estado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(['open', 'in_progress', 'resolved', 'closed'] as TicketStatus[]).map((status) => (
+                {ticketStatusOrder.map((status) => (
                   <Button
                     key={status}
                     variant={ticket.status === status ? 'default' : 'outline'}
                     size="sm"
                     className="w-full"
+                    aria-pressed={ticket.status === status}
+                    disabled={ticket.status === status}
                     onClick={() => handleStatusChange(status)}
                   >
-                    {statusLabel[status]}
+                    {ticketStatusLabel[status]}
                   </Button>
                 ))}
               </CardContent>

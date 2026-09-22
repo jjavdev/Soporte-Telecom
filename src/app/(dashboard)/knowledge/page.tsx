@@ -54,7 +54,11 @@ export default function KnowledgePage() {
   }, [supabase])
 
   const filtered = articles.filter((article) => {
-    const matchesSearch = !search || article.title.toLowerCase().includes(search.toLowerCase())
+    const q = search.toLowerCase()
+    const matchesSearch =
+      !search ||
+      article.title.toLowerCase().includes(q) ||
+      article.content.toLowerCase().includes(q)
     const matchesCategory = !categoryFilter || article.category_id === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -79,7 +83,7 @@ export default function KnowledgePage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-10 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm"
+          className="h-11 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-9 md:text-sm"
         >
           <option value="">Todas las categorías</option>
           {categories.map((cat) => (

@@ -221,7 +221,7 @@ export default function ChatPage() {
               : 'Conectado'}
           </p>
         </div>
-        <div className={`h-2 w-2 rounded-full ${session?.status === 'waiting' ? 'bg-yellow-500' : 'bg-green-500'}`} />
+        <div className={`h-2 w-2 rounded-full ${session?.status === 'waiting' ? 'bg-warning-9' : 'bg-success-9'}`} />
       </div>
 
       {/* Error banner */}

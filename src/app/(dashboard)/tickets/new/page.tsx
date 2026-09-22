@@ -70,13 +70,13 @@ export default function NewTicketPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 md:max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-dark">Nuevo Ticket</h1>
+      <h1 className="text-2xl font-bold text-foreground">Nuevo Ticket</h1>
 
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {serverError && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-lg bg-danger-3 p-3 text-sm text-danger-11">
                 {serverError}
               </div>
             )}
@@ -93,7 +93,7 @@ export default function NewTicketPage() {
                 })}
               />
               {errors.title && (
-                <p className="text-xs text-red-600">{errors.title.message}</p>
+                <p className="text-xs text-danger-11">{errors.title.message}</p>
               )}
             </div>
 
@@ -102,7 +102,7 @@ export default function NewTicketPage() {
               <textarea
                 id="description"
                 rows={4}
-                className="flex w-full min-h-[80px] rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
+                className="flex w-full min-h-[96px] rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
                 placeholder="Explica tu problema con detalle..."
                 aria-invalid={!!errors.description}
                 {...register('description', {
@@ -111,7 +111,7 @@ export default function NewTicketPage() {
                 })}
               />
               {errors.description && (
-                <p className="text-xs text-red-600">{errors.description.message}</p>
+                <p className="text-xs text-danger-11">{errors.description.message}</p>
               )}
             </div>
 
@@ -120,7 +120,7 @@ export default function NewTicketPage() {
                 <Label htmlFor="category_id">Categoría</Label>
                 <select
                   id="category_id"
-                  className="flex h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm dark:bg-input/30"
+                  className="flex h-11 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-9 md:text-sm dark:bg-input/30"
                   {...register('category_id')}
                 >
                   <option value="">Seleccionar categoría</option>
@@ -136,7 +136,7 @@ export default function NewTicketPage() {
                 <Label htmlFor="priority">Prioridad</Label>
                 <select
                   id="priority"
-                  className="flex h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm dark:bg-input/30"
+                  className="flex h-11 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:h-9 md:text-sm dark:bg-input/30"
                   {...register('priority')}
                 >
                   <option value="low">Baja</option>

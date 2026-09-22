@@ -5,41 +5,20 @@ import Link from 'next/link'
 import { useTickets } from '@/hooks/useTickets'
 import { useAuth } from '@/hooks/useAuth'
 import { isStaff } from '@/lib/permissions'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, Search } from 'lucide-react'
-import type { TicketStatus, TicketPriority } from '@/types/database'
-
-const statusLabels: Record<TicketStatus, string> = {
-  open: 'Abierto',
-  in_progress: 'En Progreso',
-  resolved: 'Resuelto',
-  closed: 'Cerrado',
-}
-
-const statusClasses: Record<TicketStatus, string> = {
-  open: 'bg-amber-100 text-amber-800 border-amber-200',
-  in_progress: 'bg-blue-100 text-blue-800 border-blue-200',
-  resolved: 'bg-green-100 text-green-800 border-green-200',
-  closed: 'bg-gray-100 text-gray-600 border-gray-200',
-}
-
-const priorityLabels: Record<TicketPriority, string> = {
-  urgent: 'Urgente',
-  high: 'Alta',
-  medium: 'Media',
-  low: 'Baja',
-}
-
-const priorityClasses: Record<TicketPriority, string> = {
-  urgent: 'bg-red-100 text-red-800 border-red-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  medium: 'bg-blue-100 text-blue-800 border-blue-200',
-  low: 'bg-gray-100 text-gray-600 border-gray-200',
-}
+import {
+  ticketPriorityClass,
+  ticketPriorityLabel,
+  ticketStatusClass,
+  ticketStatusLabel,
+  ticketStatusOrder,
+} from '@/lib/constants'
+import type { TicketPriority, TicketStatus } from '@/types/database'
 
 export default function TicketsPage() {
   const { user } = useAuth()
@@ -79,26 +58,41 @@ export default function TicketsPage() {
         <select
           value={statusFilter || ''}
           onChange={(e) => setStatusFilter((e.target.value as TicketStatus) || undefined)}
-          className="h-10 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm"
+          className="h-11 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-9 md:text-sm"
         >
           <option value="">Todos los estados</option>
-          <option value="open">Abierto</option>
-          <option value="in_progress">En Progreso</option>
-          <option value="resolved">Resuelto</option>
-          <option value="closed">Cerrado</option>
+          {ticketStatusOrder.map((status) => (
+            <option key={status} value={status}>
+              {ticketStatusLabel[status]}
+            </option>
+          ))}
         </select>
 
         <select
           value={priorityFilter || ''}
           onChange={(e) => setPriorityFilter((e.target.value as TicketPriority) || undefined)}
-          className="h-10 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-8 md:text-sm"
+          className="h-11 rounded-lg border border-input bg-transparent px-3 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:h-9 md:text-sm"
         >
           <option value="">Todas las prioridades</option>
-          <option value="urgent">Urgente</option>
-          <option value="high">Alta</option>
-          <option value="medium">Media</option>
-          <option value="low">Baja</option>
+          {(Object.keys(ticketPriorityLabel) as TicketPriority[]).map((priority) => (
+            <option key={priority} value={priority}>
+              {ticketPriorityLabel[priority]}
+            </option>
+          ))}
         </select>
+
+        {(search || statusFilter || priorityFilter) && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSearch('')
+              setStatusFilter(undefined)
+              setPriorityFilter(undefined)
+            }}
+          >
+            Limpiar
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -147,11 +141,11 @@ export default function TicketsPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-3 shrink-0">
-                      <Badge className={statusClasses[ticket.status]}>
-                        {statusLabels[ticket.status]}
+                      <Badge variant="outline" className={ticketStatusClass[ticket.status]}>
+                        {ticketStatusLabel[ticket.status]}
                       </Badge>
-                      <Badge className={priorityClasses[ticket.priority]}>
-                        {priorityLabels[ticket.priority]}
+                      <Badge variant="outline" className={ticketPriorityClass[ticket.priority]}>
+                        {ticketPriorityLabel[ticket.priority]}
                       </Badge>
                     </div>
                   </CardContent>
@@ -196,13 +190,13 @@ export default function TicketsPage() {
                           {ticket.category?.name}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge className={statusClasses[ticket.status]}>
-                            {statusLabels[ticket.status]}
+                          <Badge variant="outline" className={ticketStatusClass[ticket.status]}>
+                            {ticketStatusLabel[ticket.status]}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge className={priorityClasses[ticket.priority]}>
-                            {priorityLabels[ticket.priority]}
+                          <Badge variant="outline" className={ticketPriorityClass[ticket.priority]}>
+                            {ticketPriorityLabel[ticket.priority]}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">

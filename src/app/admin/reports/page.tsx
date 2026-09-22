@@ -9,20 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FileText, RefreshCw, AlertTriangle } from 'lucide-react'
 import type { Ticket } from '@/types/database'
-
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  open: { label: 'Abierto', variant: 'secondary' },
-  in_progress: { label: 'En Progreso', variant: 'default' },
-  resolved: { label: 'Resuelto', variant: 'outline' },
-  closed: { label: 'Cerrado', variant: 'secondary' },
-}
-
-const priorityConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  urgent: { label: 'Urgente', variant: 'destructive' },
-  high: { label: 'Alta', variant: 'secondary' },
-  medium: { label: 'Media', variant: 'default' },
-  low: { label: 'Baja', variant: 'outline' },
-}
+import {
+  ticketPriorityClass,
+  ticketPriorityLabel,
+  ticketPriorityOrder,
+  ticketStatusClass,
+  ticketStatusLabel,
+  ticketStatusOrder,
+} from '@/lib/constants'
 
 function LoadingSkeleton() {
   return (
@@ -135,32 +129,32 @@ export default function AdminReportsPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 overflow-auto h-full">
       <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-primary" />
+        <FileText className="h-6 w-6 text-muted-foreground" />
         <h1 className="text-2xl font-bold">Reportes</h1>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-primary">{stats.total}</p>
+            <p className="text-3xl font-bold text-foreground">{stats.total}</p>
             <p className="text-sm text-muted-foreground">Total Tickets</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-orange-500">{stats.byStatus.open}</p>
+            <p className="text-3xl font-bold text-warning-11">{stats.byStatus.open}</p>
             <p className="text-sm text-muted-foreground">Abiertos</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-green-600">{stats.byStatus.resolved}</p>
+            <p className="text-3xl font-bold text-success-11">{stats.byStatus.resolved}</p>
             <p className="text-sm text-muted-foreground">Resueltos</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-destructive">{stats.byPriority.urgent}</p>
+            <p className="text-3xl font-bold text-danger-11">{stats.byPriority.urgent}</p>
             <p className="text-sm text-muted-foreground">Urgentes</p>
           </CardContent>
         </Card>
@@ -178,15 +172,14 @@ export default function AdminReportsPage() {
               <CardTitle>Tickets por Estado</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {Object.entries(stats.byStatus).map(([status, count]) => {
-                const cfg = statusConfig[status]
-                return (
-                  <div key={status} className="flex items-center justify-between">
-                    <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                    <span className="font-bold text-lg">{count}</span>
-                  </div>
-                )
-              })}
+              {ticketStatusOrder.map((status) => (
+                <div key={status} className="flex items-center justify-between">
+                  <Badge variant="outline" className={ticketStatusClass[status]}>
+                    {ticketStatusLabel[status]}
+                  </Badge>
+                  <span className="font-bold text-lg">{stats.byStatus[status]}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
@@ -197,15 +190,14 @@ export default function AdminReportsPage() {
               <CardTitle>Tickets por Prioridad</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {Object.entries(stats.byPriority).map(([priority, count]) => {
-                const cfg = priorityConfig[priority]
-                return (
-                  <div key={priority} className="flex items-center justify-between">
-                    <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                    <span className="font-bold text-lg">{count}</span>
-                  </div>
-                )
-              })}
+              {ticketPriorityOrder.map((priority) => (
+                <div key={priority} className="flex items-center justify-between">
+                  <Badge variant="outline" className={ticketPriorityClass[priority]}>
+                    {ticketPriorityLabel[priority]}
+                  </Badge>
+                  <span className="font-bold text-lg">{stats.byPriority[priority]}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

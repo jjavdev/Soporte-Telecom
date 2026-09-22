@@ -17,21 +17,12 @@ import {
 } from '@/components/ui/dialog'
 import { Users, Search, UserCheck, UserX, Loader2, Edit2 } from 'lucide-react'
 import type { User, UserRole } from '@/types/database'
-import { roleColors } from '@/lib/constants'
-
-const roleBadgeVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  info: 'secondary',
-  success: 'default',
-  warning: 'outline',
-  danger: 'destructive',
-}
-
-const roleLabels: Record<UserRole, string> = {
-  customer: 'Cliente',
-  agent: 'Agente',
-  supervisor: 'Supervisor',
-  admin: 'Admin',
-}
+import {
+  userRoleClass,
+  userRoleLabel,
+  userStatusClass,
+  userStatusLabel,
+} from '@/lib/constants'
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -115,7 +106,7 @@ export default function AdminUsersPage() {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-primary" />
+          <Users className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
         </div>
         <div className="flex flex-col gap-4">
@@ -141,7 +132,7 @@ export default function AdminUsersPage() {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-primary" />
+          <Users className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
         </div>
         <Card>
@@ -164,7 +155,7 @@ export default function AdminUsersPage() {
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 text-primary" />
+          <Users className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Gestionar Usuarios</h1>
         </div>
         <div className="relative">
@@ -193,7 +184,7 @@ export default function AdminUsersPage() {
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-3 text-sm font-medium text-brand-11">
                         {user.full_name.charAt(0)}
                       </div>
                       <div>
@@ -206,22 +197,17 @@ export default function AdminUsersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
                       onClick={() => openEditDialog(user)}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge variant={roleBadgeVariant[roleColors[user.role]]}>
-                      {roleLabels[user.role]}
+                    <Badge variant="outline" className={userRoleClass[user.role]}>
+                      {userRoleLabel[user.role]}
                     </Badge>
-                    <Badge
-                      variant={
-                        user.status === 'active' ? 'default' : 'destructive'
-                      }
-                    >
-                      {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                    <Badge variant="outline" className={userStatusClass[user.status]}>
+                      {userStatusLabel[user.status]}
                     </Badge>
                     <span className="ml-auto text-xs text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString('es')}
@@ -279,7 +265,7 @@ export default function AdminUsersPage() {
                       <tr key={user.id} className="hover:bg-muted/50">
                         <td className="py-3">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-3 text-sm font-medium text-brand-11">
                               {user.full_name.charAt(0)}
                             </div>
                             <span className="font-medium">
@@ -291,21 +277,13 @@ export default function AdminUsersPage() {
                           {user.email}
                         </td>
                         <td className="py-3">
-                          <Badge
-                            variant={roleBadgeVariant[roleColors[user.role]]}
-                          >
-                            {roleLabels[user.role]}
+                          <Badge variant="outline" className={userRoleClass[user.role]}>
+                            {userRoleLabel[user.role]}
                           </Badge>
                         </td>
                         <td className="py-3">
-                          <Badge
-                            variant={
-                              user.status === 'active'
-                                ? 'default'
-                                : 'destructive'
-                            }
-                          >
-                            {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                          <Badge variant="outline" className={userStatusClass[user.status]}>
+                            {userStatusLabel[user.status]}
                           </Badge>
                         </td>
                         <td className="py-3 text-muted-foreground">
@@ -316,7 +294,6 @@ export default function AdminUsersPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
                               onClick={() => openEditDialog(user)}
                             >
                               <Edit2 className="h-4 w-4" />
@@ -363,7 +340,7 @@ export default function AdminUsersPage() {
               <Label>Rol</Label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {(
-                  Object.entries(roleLabels) as [UserRole, string][]
+                  Object.entries(userRoleLabel) as [UserRole, string][]
                 ).map(([value, label]) => (
                   <Button
                     key={value}

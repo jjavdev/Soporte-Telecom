@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-6 w-6 text-primary" />
+          <BarChart3 className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Panel de Administración</h1>
         </div>
         <Button variant="outline" size="sm" onClick={fetchStats} disabled={loading}>
@@ -188,9 +188,9 @@ export default function AdminDashboard() {
             ) : (
               <>
                 {[
-                  { label: 'Abiertos', value: stats.openTickets, color: 'bg-amber-500' },
-                  { label: 'En Progreso', value: stats.inProgressTickets, color: 'bg-blue-500' },
-                  { label: 'Resueltos', value: stats.resolvedTickets, color: 'bg-green-500' },
+                  { label: 'Abiertos', value: stats.openTickets, color: 'bg-warning-9' },
+                  { label: 'En Progreso', value: stats.inProgressTickets, color: 'bg-brand-9' },
+                  { label: 'Resueltos', value: stats.resolvedTickets, color: 'bg-success-9' },
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="flex items-center justify-between text-sm">
