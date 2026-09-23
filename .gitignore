@@ -44,6 +44,9 @@ yarn-error.log*
 # codegraph index
 .codegraph/
 
+# n8n workflows con credenciales embebidas (n8n Cloud); el original sin secretos sí se versiona
+n8n-workflows/*.cloud.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

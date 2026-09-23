@@ -10,6 +10,15 @@ const MODEL = process.env.CHATBOT_MODEL ?? 'deepseek-chat'
 const BOT_ID = process.env.CHATBOT_USER_ID
 const N8N_URL = process.env.N8N_WEBHOOK_URL ?? process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
 
+/**
+ * Acepta tanto una URL base (self-hosted, ej. http://localhost:5678) como una
+ * URL completa de webhook (n8n Cloud, ej. https://xxx.app.n8n.cloud/webhook/chatbot).
+ */
+function n8nWebhookUrl(base: string): string {
+  const trimmed = base.replace(/\/+$/, '')
+  return /\/webhook\//.test(trimmed) ? trimmed : `${trimmed}/webhook/chatbot`
+}
+
 const NON_PERSISTED = ['error', 'timeout', 'connection_error', 'unavailable', 'unauthorized']
 
 function admin() {
@@ -26,7 +35,7 @@ async function callN8n(
   userId: string,
   signal: AbortSignal,
 ): Promise<ChatbotResult> {
-  const response = await fetch(`${N8N_URL}/webhook/chatbot`, {
+  const response = await fetch(n8nWebhookUrl(N8N_URL!), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, session_id: sessionId, user_id: userId }),
